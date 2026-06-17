@@ -1,0 +1,1235 @@
+/* ============================================================
+   知识图谱编辑器 — 电影感沉浸主题 v2
+   ============================================================
+   设计规格：
+   - 深黑/深蓝基底 (#0a0a0a / #080a10)
+   - 噪点纹理叠加 / 毛玻璃 / 微光晕
+   - 超细字重 + 大字母间距
+   - 全圆角按钮 + hover 上浮
+   - fadeUp 动画 + staggered 延迟
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   1. 颜色体系
+   ============================================================ */
+
+:root {
+  /* 基底 */
+  --bg-deep: #080a10;
+  --bg-primary: #0c0e16;
+  --bg-secondary: #11141f;
+  --bg-surface: #181c2a;
+  --bg-hover: #1f2440;
+  --bg-active: #2a3060;
+
+  /* 毛玻璃色 */
+  --glass-bg: rgba(12, 14, 22, 0.88);
+  --glass-bg-light: rgba(24, 28, 42, 0.82);
+  --glass-bg-card: rgba(24, 28, 42, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-border-hover: rgba(77, 166, 255, 0.15);
+
+  /* 主色 — 冰蓝 */
+  --accent: #4da6ff;
+  --accent-hover: #70b5ff;
+  --accent-subtle: rgba(77, 166, 255, 0.08);
+  --accent-glow: rgba(77, 166, 255, 0.2);
+  --accent-glow-strong: rgba(77, 166, 255, 0.35);
+
+  /* 文字层级 */
+  --text-primary: #ffffff;
+  --text-secondary: #f0f4ff;
+  --text-tertiary: rgba(255, 255, 255, 0.55);
+  --text-muted: rgba(255, 255, 255, 0.25);
+  --text-faint: rgba(255, 255, 255, 0.08);
+
+  /* 功能色 */
+  --danger: #ff4757;
+  --danger-hover: #ff6b7a;
+  --success: #4dc878;
+  --warning: #e67e22;
+
+  /* 分隔线 */
+  --divider: rgba(255, 255, 255, 0.04);
+  --divider-light: rgba(255, 255, 255, 0.06);
+
+  /* 圆角 */
+  --radius-pill: 9999px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* 阴影 */
+  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 4px 24px rgba(77, 166, 255, 0.12);
+
+  /* 动效 */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --transition: 0.4s var(--ease-out);
+  --transition-slow: 0.6s var(--ease-out);
+  --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* 字体 */
+  --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+}
+
+/* ============================================================
+   2. 全局 + 噪点纹理
+   ============================================================ */
+
+html, body {
+  height: 100%;
+  font-family: var(--font-sans);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 噪点纹理叠加 — 电影胶片颗粒感 */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ============================================================
+   3. Keyframe 动画
+   ============================================================ */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 12px var(--accent-glow); }
+  50% { box-shadow: 0 0 24px var(--accent-glow-strong); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ============================================================
+   4. 顶部导航栏 — 毛玻璃
+   ============================================================ */
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 48px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--glass-border);
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+  animation: fadeIn 0.6s var(--ease-out);
+}
+
+/* 导航栏底部微光 */
+#toolbar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.25;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toolbar-left h1 {
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #ffffff, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.toolbar-center {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  -webkit-app-region: no-drag;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  -webkit-app-region: no-drag;
+}
+
+/* 工具栏分隔线 */
+.toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--divider-light);
+  margin: 0 8px;
+}
+
+/* ---- 导航按钮 — 全圆角毛玻璃 ---- */
+
+.tool-btn {
+  padding: 7px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  position: relative;
+}
+
+.tool-btn:hover {
+  color: var(--text-secondary);
+  background: var(--accent-subtle);
+  border-color: var(--glass-border-hover);
+  backdrop-filter: blur(8px);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow);
+}
+
+.tool-btn:active {
+  transform: translateY(0) scale(0.97);
+  background: var(--bg-hover);
+}
+
+/* ---- 下拉框 ---- */
+
+.tool-select {
+  padding: 7px 32px 7px 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(8px);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  outline: none;
+  transition: all var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='rgba(255,255,255,0.45)' d='M2.5 3.5l2.5 2.5 2.5-2.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.tool-select:hover {
+  border-color: var(--glass-border-hover);
+  color: var(--text-secondary);
+}
+
+.tool-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
+}
+
+.tool-select option {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+/* ---- 搜索框 ---- */
+
+#search-input {
+  padding: 6px 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(8px);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  width: 160px;
+  outline: none;
+  transition: all var(--transition);
+}
+
+#search-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 300;
+  letter-spacing: 0.3px;
+}
+
+#search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
+}
+
+#status-bar {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 5px 14px;
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  min-width: 64px;
+  text-align: center;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   5. 主体布局
+   ============================================================ */
+
+#main-container {
+  display: flex;
+  height: calc(100vh - 64px - 36px);
+  flex: 1;
+  position: relative;
+}
+
+/* 顶部环境光晕 */
+#main-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 160px;
+  background: radial-gradient(ellipse at 30% 0%, rgba(77, 166, 255, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   6. 图谱画布 — 深空
+   ============================================================ */
+
+#graph-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(12, 16, 28, 0.8) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 60%, rgba(77, 166, 255, 0.03) 0%, transparent 50%),
+    linear-gradient(180deg, #0a0c14 0%, #080a10 100%);
+}
+
+#graph-vis {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* 空状态 */
+#empty-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 2;
+  animation: fadeUp 0.8s var(--ease-out);
+}
+
+.empty-icon {
+  font-size: 72px;
+  margin-bottom: 20px;
+  opacity: 0.2;
+  filter: grayscale(0.6);
+}
+
+.empty-text {
+  font-size: 16px;
+  font-weight: 200;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.empty-sub {
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  color: var(--text-faint);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ============================================================
+   7. 右侧属性面板 — 玻璃质感
+   ============================================================ */
+
+#property-panel {
+  width: 320px;
+  min-width: 320px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid var(--glass-border);
+  overflow-y: auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+#property-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(77, 166, 255, 0.08), transparent);
+}
+
+.panel-section {
+  padding: 28px 24px;
+}
+
+.panel-section:not(.hidden) {
+  animation: fadeUp 0.4s var(--ease-out);
+}
+
+.panel-placeholder {
+  text-align: center;
+  padding: 100px 20px;
+  color: var(--text-muted);
+}
+
+.placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  opacity: 0.2;
+}
+
+.panel-placeholder div {
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 1.5px;
+  color: var(--text-faint);
+}
+
+.panel-title {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.panel-icon {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.panel-id {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-left: auto;
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-group label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.form-input {
+  padding: 10px 14px;
+  border: 1px solid var(--divider-light);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(4px);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  font-weight: 300;
+  outline: none;
+  transition: all var(--transition);
+}
+
+.form-input::placeholder {
+  color: var(--text-faint);
+  font-weight: 300;
+}
+
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+.form-input:read-only {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.form-color {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--divider-light);
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+  padding: 3px;
+  transition: border var(--transition);
+}
+
+.form-color:hover {
+  border-color: var(--accent);
+}
+
+.form-color::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.form-color::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-hex {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  letter-spacing: 0.3px;
+}
+
+.form-textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--divider-light);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(4px);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 300;
+  outline: none;
+  resize: vertical;
+  transition: all var(--transition);
+  line-height: 1.7;
+}
+
+.form-textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.form-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* ---- 全圆角毛玻璃按钮 ---- */
+
+.btn-primary {
+  padding: 10px 24px;
+  border: 1px solid var(--glass-border-hover);
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  font-family: var(--font-sans);
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all var(--transition);
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary:hover {
+  color: #ffffff;
+  background: rgba(77, 166, 255, 0.15);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(77, 166, 255, 0.15);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.btn-secondary {
+  padding: 10px 24px;
+  border: 1px solid var(--divider-light);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--glass-border-hover);
+  color: var(--text-secondary);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   8. 底部状态栏
+   ============================================================ */
+
+#footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 48px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--glass-border);
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  letter-spacing: 0.8px;
+  position: relative;
+  z-index: 100;
+}
+
+#footer-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(77, 166, 255, 0.06), transparent);
+}
+
+#footer-stats,
+#footer-mode,
+#footer-layout {
+  font-size: 10px;
+  opacity: 0.45;
+  letter-spacing: 1px;
+}
+
+/* ============================================================
+   9. 自定义滚动条
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================================
+   10. vis-network 覆盖样式
+   ============================================================ */
+
+.vis-network:focus {
+  outline: none;
+}
+
+.vis-tooltip {
+  background: rgba(12, 14, 22, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-secondary) !important;
+  font-size: 12px !important;
+  font-family: var(--font-sans) !important;
+  padding: 10px 14px !important;
+  box-shadow: var(--shadow-lg) !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.vis-tooltip hr {
+  border-color: var(--divider-light) !important;
+  margin: 6px 0 !important;
+}
+
+.vis-selected {
+  filter: drop-shadow(0 0 12px var(--accent-glow-strong)) !important;
+}
+
+/* 导航按钮 */
+.vis-navigation div.vis-button {
+  background: var(--glass-bg-light) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 50% !important;
+  box-shadow: var(--shadow-sm) !important;
+  opacity: 0.4 !important;
+  transition: all var(--transition) !important;
+}
+
+.vis-navigation div.vis-button:hover {
+  opacity: 0.9 !important;
+  border-color: var(--accent) !important;
+  box-shadow: var(--shadow-glow) !important;
+  transform: scale(1.05) !important;
+}
+
+/* vis-network 选中框 */
+.vis-selected {
+  stroke: var(--accent) !important;
+  stroke-width: 2px !important;
+}
+
+/* ============================================================
+   11. 覆盖层 / 弹窗通用
+   ============================================================ */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.overlay-panel {
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.4s var(--ease-out);
+  z-index: 1;
+}
+
+.overlay-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-close:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--glass-border-hover);
+}
+
+/* ============================================================
+   12. 快捷键帮助面板
+   ============================================================ */
+
+.shortcuts-panel {
+  width: 520px;
+  max-height: 80vh;
+  padding: 32px;
+  overflow-y: auto;
+}
+
+.shortcuts-panel h2 {
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.shortcut-group h4 {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.shortcut-row span {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 300;
+}
+
+.shortcut-row kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   13. 节点标签页（富文本编辑器）
+   ============================================================ */
+
+.node-tab-panel {
+  width: 760px;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.tab-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.tab-dot {
+  font-size: 14px;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.tab-title-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 300;
+  font-family: var(--font-sans);
+  letter-spacing: 0.5px;
+  outline: none;
+  flex: 1;
+  padding: 4px 0;
+  transition: border var(--transition);
+}
+
+.tab-title-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.tab-level-badge {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  padding: 2px 8px;
+  border: 1px solid var(--accent-subtle);
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.5px;
+}
+
+.tab-id {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+}
+
+.tab-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 格式工具栏 */
+.tab-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--divider);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.tab-tool-btn {
+  width: 30px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+}
+
+.tab-tool-btn:hover {
+  background: var(--accent-subtle);
+  color: var(--text-secondary);
+  border-color: var(--glass-border-hover);
+}
+
+.tab-tool-btn.active {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.tab-tool-select {
+  padding: 3px 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  outline: none;
+}
+
+.tab-tool-select:hover {
+  border-color: var(--glass-border-hover);
+}
+
+.tab-tool-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--divider-light);
+  margin: 0 4px;
+}
+
+.tab-color-input {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--glass-border);
+  border-radius: 4px;
+  padding: 1px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.tab-color-input:hover {
+  border-color: var(--accent);
+}
+
+/* 编辑器主体 */
+.tab-editor {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-weight: 300;
+  outline: none;
+  letter-spacing: 0.3px;
+}
+
+.tab-editor:focus {
+  outline: none;
+}
+
+.tab-editor[contenteditable]:empty::before {
+  content: "在此编写节点的详细知识...";
+  color: var(--text-faint);
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+/* 编辑器内富文本样式 */
+.tab-editor h1 { font-size: 24px; font-weight: 200; letter-spacing: 2px; margin: 16px 0 8px; }
+.tab-editor h2 { font-size: 20px; font-weight: 300; letter-spacing: 1.5px; margin: 14px 0 6px; }
+.tab-editor h3 { font-size: 17px; font-weight: 400; letter-spacing: 1px; margin: 12px 0 4px; }
+.tab-editor p { margin: 6px 0; }
+.tab-editor ul, .tab-editor ol { padding-left: 24px; margin: 6px 0; }
+.tab-editor li { margin: 3px 0; }
+.tab-editor mark { background: rgba(255, 213, 0, 0.35); color: inherit; padding: 0 2px; border-radius: 2px; }
+.tab-editor blockquote {
+  border-left: 2px solid var(--accent);
+  margin: 8px 0;
+  padding: 4px 16px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+.tab-editor pre {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+/* 标签页底部 */
+.tab-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+  border-top: 1px solid var(--divider);
+  font-size: 10px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   14. 层级控制
+   ============================================================ */
+
+.level-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.level-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.level-btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--accent-subtle);
+}
+
+.level-value {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  min-width: 20px;
+  text-align: center;
+}
+
+.level-indicator {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.level-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all var(--transition);
+}
+
+.level-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+/* ============================================================
+   15. 快捷键提示标签
+   ============================================================ */
+
+.shortcut-hint {
+  font-size: 9px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  margin-left: 4px;
+  letter-spacing: 0.3px;
+}
+
+/* ============================================================
+   16. 响应式
+   ============================================================ */
+
+@media (max-width: 1200px) {
+  #toolbar { padding: 0 24px; }
+  #footer-bar { padding: 0 24px; }
+  .toolbar-center .tool-btn { padding: 6px 12px; font-size: 11px; }
+}
+
+@media (max-width: 900px) {
+  #toolbar { height: 56px; padding: 0 16px; }
+  #property-panel { width: 280px; min-width: 280px; }
+  .toolbar-left h1 { font-size: 12px; letter-spacing: 1.5px; }
+  .toolbar-center { gap: 0; }
+  .toolbar-right #search-input { width: 120px; }
+}
+
+@media (max-width: 600px) {
+  #toolbar {
+    height: 48px;
+    padding: 0 12px;
+    flex-wrap: wrap;
+  }
+  .toolbar-left h1 { font-size: 11px; }
+  .toolbar-center .tool-btn { padding: 4px 8px; font-size: 10px; }
+  .toolbar-sep { margin: 0 3px; }
+  #property-panel { width: 100%; min-width: 0; }
+  #main-container { flex-direction: column; }
+  #footer-bar { padding: 0 12px; height: 28px; }
+  #footer-stats, #footer-mode, #footer-layout { font-size: 9px; }
+  .panel-section { padding: 20px 16px; }
+}

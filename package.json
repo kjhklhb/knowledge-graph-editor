@@ -1,0 +1,14 @@
+{
+  "name": "knowledge-graph-editor",
+  "version": "1.0.0",
+  "description": "可视化知识图谱编辑器 - Electron + Python 桌面应用",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^24.0.0"
+  }
+}

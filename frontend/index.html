@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>知识图谱编辑器</title>
+  <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+  <script>if(typeof vis==="undefined"){var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js";document.head.appendChild(s);}</script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== 顶部工具栏 ===== -->
+  <header id="toolbar">
+    <div class="toolbar-left">
+      <h1>⌘ 知识图谱编辑器</h1>
+    </div>
+    <div class="toolbar-center">
+      <button class="tool-btn" id="btn-new" title="新建图谱 (Ctrl+N)">📄 新建</button>
+      <button class="tool-btn" id="btn-open" title="打开文件 (Ctrl+O)">📂 打开</button>
+      <button class="tool-btn" id="btn-save" title="保存 (Ctrl+S)">💾 保存</button>
+      <button class="tool-btn" id="btn-sample" title="加载示例">📊 示例</button>
+      <span class="toolbar-sep"></span>
+      <button class="tool-btn" id="btn-add-node" title="添加节点 (A)">➕ 节点</button>
+      <button class="tool-btn" id="btn-add-edge" title="添加边 (E)">➡️ 边</button>
+      <button class="tool-btn" id="btn-delete-selected" title="删除选中 (Delete)">🗑️ 删除</button>
+      <span class="toolbar-sep"></span>
+      <button class="tool-btn" id="btn-tidy-layout" title="整理布局">✨ 整理</button>
+      <select id="layout-select" class="tool-select">
+        <option value="force">力导向</option>
+        <option value="hierarchical">层次</option>
+        <option value="radial">辐射</option>
+      </select>
+    </div>
+    <div class="toolbar-right">
+      <input type="text" id="search-input" placeholder="🔍 搜索..." />
+      <button class="tool-btn" id="btn-shortcuts" title="快捷键帮助">⌨️</button>
+      <span id="status-bar">就绪</span>
+    </div>
+  </header>
+
+  <!-- ===== 主体布局 ===== -->
+  <div id="main-container">
+
+    <!-- 图谱可视化区域 -->
+    <div id="graph-container">
+      <div id="graph-vis"></div>
+      <div id="empty-hint" class="hidden">
+        <div class="empty-icon">🌐</div>
+        <div class="empty-text">图谱为空</div>
+        <div class="empty-sub">「示例」加载数据 · 点击「节点」创建 · 按 ⌘ 查看快捷键</div>
+      </div>
+    </div>
+
+    <!-- ===== 右侧属性面板 ===== -->
+    <aside id="property-panel">
+      <!-- 空状态 -->
+      <div id="panel-empty" class="panel-section">
+        <div class="panel-placeholder">
+          <div class="placeholder-icon">👆</div>
+          <div>点击节点或边编辑属性</div>
+          <div class="placeholder-shortcuts">
+            <span>A</span> 节点 · <span>E</span> 边 · <span>Space</span> 连接<br>
+            <span>双击</span> 打开标签页
+          </div>
+        </div>
+      </div>
+
+      <!-- 节点属性编辑 -->
+      <div id="panel-node" class="panel-section hidden">
+        <h3 class="panel-title">
+          <span class="panel-icon">🔵</span> 节点属性
+          <button class="panel-btn-open" id="btn-open-node-tab" title="打开节点标签页">📝</button>
+          <span class="panel-id" id="node-panel-id"></span>
+        </h3>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>标签</label>
+            <input type="text" id="edit-node-label" class="form-input" placeholder="节点名称" />
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>层级</label>
+              <div class="level-selector">
+                <button class="level-btn" id="level-down">-</button>
+                <span id="edit-node-level" class="level-value">Lv.1</span>
+                <button class="level-btn" id="level-up">+</button>
+              </div>
+              <div class="level-indicator" style="margin-top:6px">
+                <span class="level-dot" id="ld-1"></span>
+                <span class="level-dot" id="ld-2"></span>
+                <span class="level-dot" id="ld-3"></span>
+                <span class="level-dot" id="ld-4"></span>
+                <span class="level-dot" id="ld-5"></span>
+              </div>
+            </div>
+            <div class="form-group flex-1">
+              <label>颜色</label>
+              <div class="color-row">
+                <input type="color" id="edit-node-color" class="form-color" value="#4A90D9" />
+                <span class="color-hex" id="node-color-hex">#4A90D9</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>属性 (JSON)</label>
+            <textarea id="edit-node-props" class="form-textarea" rows="3" placeholder='{"key": "value"}'></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" id="btn-save-node">💾 保存</button>
+            <button class="btn-secondary" id="btn-open-node-tab2">📝 标签页</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 边属性编辑 -->
+      <div id="panel-edge" class="panel-section hidden">
+        <h3 class="panel-title">
+          <span class="panel-icon">➡️</span> 边属性
+          <span class="panel-id" id="edge-panel-id"></span>
+        </h3>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>关系标签</label>
+            <input type="text" id="edit-edge-label" class="form-input" placeholder="关系名称" />
+          </div>
+          <div class="form-group">
+            <label>颜色</label>
+            <div class="color-row">
+              <input type="color" id="edit-edge-color" class="form-color" value="#95A5A6" />
+              <span class="color-hex" id="edge-color-hex">#95A5A6</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>属性 (JSON)</label>
+            <textarea id="edit-edge-props" class="form-textarea" rows="3" placeholder='{"key": "value"}'></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" id="btn-save-edge">💾 保存</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 添加边向导 -->
+      <div id="panel-add-edge" class="panel-section hidden">
+        <h3 class="panel-title"><span class="panel-icon">➕</span> 添加边</h3>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>起始</label>
+            <input type="text" id="edge-from" class="form-input" readonly placeholder="点起始节点" />
+          </div>
+          <div class="form-group">
+            <label>目标</label>
+            <input type="text" id="edge-to" class="form-input" readonly placeholder="点目标节点" />
+          </div>
+          <div class="form-group">
+            <label>关系</label>
+            <input type="text" id="edge-new-label" class="form-input" value="关联" />
+          </div>
+          <div class="form-group">
+            <label>颜色</label>
+            <div class="color-row">
+              <input type="color" id="edge-new-color" class="form-color" value="#95A5A6" />
+              <span class="color-hex" id="edge-new-color-hex">#95A5A6</span>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" id="btn-confirm-edge">✅ 确认 (Enter)</button>
+            <button class="btn-secondary" id="btn-cancel-edge">❌ 取消 (Esc)</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ===== 快捷键帮助面板 ===== -->
+  <div id="shortcuts-overlay" class="overlay hidden">
+    <div class="overlay-backdrop" id="shortcuts-backdrop"></div>
+    <div class="overlay-panel shortcuts-panel">
+      <div class="overlay-header">
+        <h2>⌨️ 快捷键</h2>
+        <button class="overlay-close" id="shortcuts-close">✕</button>
+      </div>
+      <div class="overlay-body">
+        <div class="shortcuts-grid">
+          <div class="shortcut-group">
+            <h4>图谱操作</h4>
+            <div class="shortcut-row"><kbd>Ctrl+N</kbd><span>新建</span></div>
+            <div class="shortcut-row"><kbd>Ctrl+O</kbd><span>打开</span></div>
+            <div class="shortcut-row"><kbd>Ctrl+S</kbd><span>保存</span></div>
+            <div class="shortcut-row"><kbd>Ctrl+A</kbd><span>全选节点</span></div>
+          </div>
+          <div class="shortcut-group">
+            <h4>编辑</h4>
+            <div class="shortcut-row"><kbd>A</kbd><span>添加节点</span></div>
+            <div class="shortcut-row"><kbd>E</kbd><span>添加边模式</span></div>
+            <div class="shortcut-row"><kbd>Delete</kbd><span>删除选中</span></div>
+            <div class="shortcut-row"><kbd>F2</kbd><span>编辑节点标签</span></div>
+            <div class="shortcut-row"><kbd>Space</kbd><span>连接选中两个节点</span></div>
+          </div>
+          <div class="shortcut-group">
+            <h4>布局</h4>
+            <div class="shortcut-row"><kbd>L</kbd><span>整理布局</span></div>
+            <div class="shortcut-row"><kbd>1</kbd><span>力导向</span></div>
+            <div class="shortcut-row"><kbd>2</kbd><span>层次</span></div>
+            <div class="shortcut-row"><kbd>3</kbd><span>辐射</span></div>
+          </div>
+          <div class="shortcut-group">
+            <h4>导航</h4>
+            <div class="shortcut-row"><kbd>双击</kbd><span>打开标签页</span></div>
+            <div class="shortcut-row"><kbd>Esc</kbd><span>取消/关闭</span></div>
+            <div class="shortcut-row"><kbd>Tab</kbd><span>聚焦搜索</span></div>
+            <div class="shortcut-row"><kbd>?</kbd><span>快捷键帮助</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 节点标签页（富文本编辑器） ===== -->
+  <div id="node-tab-overlay" class="overlay hidden">
+    <div class="overlay-backdrop" id="node-tab-backdrop"></div>
+    <div class="overlay-panel node-tab-panel">
+      <div class="overlay-header">
+        <div class="tab-header-left">
+          <span class="tab-dot" id="tab-dot-color">●</span>
+          <input type="text" id="tab-node-title" class="tab-title-input" placeholder="节点标题" />
+          <span class="tab-level-badge" id="tab-level-badge">Lv.1</span>
+          <span class="tab-id" id="tab-node-id"></span>
+        </div>
+        <div class="tab-header-right">
+          <button class="tool-btn" id="tab-save-close" title="保存并关闭">💾 保存</button>
+          <button class="overlay-close" id="node-tab-close">✕</button>
+        </div>
+      </div>
+
+      <!-- 格式工具栏 -->
+      <div class="tab-toolbar">
+        <select id="tab-font-size" class="tab-tool-select" title="字号">
+          <option value="3">极小</option>
+          <option value="4">小</option>
+          <option value="5" selected>普通</option>
+          <option value="6">大</option>
+          <option value="7">极大</option>
+        </select>
+        <span class="tab-tool-sep"></span>
+        <button class="tab-tool-btn" id="tab-bold" title="加粗 (Ctrl+B)"><b>B</b></button>
+        <button class="tab-tool-btn" id="tab-italic" title="斜体 (Ctrl+I)"><i>I</i></button>
+        <button class="tab-tool-btn" id="tab-underline" title="下划线 (Ctrl+U)"><u>U</u></button>
+        <button class="tab-tool-btn" id="tab-strikethrough" title="删除线"><s>S</s></button>
+        <span class="tab-tool-sep"></span>
+        <button class="tab-tool-btn" id="tab-highlight" title="荧光笔">🖍️</button>
+        <button class="tab-tool-btn" id="tab-color" title="文字颜色">🎨</button>
+        <span class="tab-tool-sep"></span>
+        <button class="tab-tool-btn" id="tab-align-left" title="左对齐">≡</button>
+        <button class="tab-tool-btn" id="tab-align-center" title="居中">≡</button>
+        <button class="tab-tool-btn" id="tab-align-right" title="右对齐">≡</button>
+        <span class="tab-tool-sep"></span>
+        <button class="tab-tool-btn" id="tab-list" title="项目列表">•</button>
+        <button class="tab-tool-btn" id="tab-olist" title="编号列表">1.</button>
+        <span class="tab-tool-sep"></span>
+        <input type="color" id="tab-color-picker" class="tab-color-input" value="#4da6ff" title="选择颜色" />
+      </div>
+
+      <!-- 编辑器主体 -->
+      <div id="tab-editor" class="tab-editor" contenteditable="true" spellcheck="false"></div>
+
+      <!-- 底部状态 -->
+      <div class="tab-footer">
+        <span id="tab-word-count">字数: 0</span>
+        <span>点击「保存」或按 Ctrl+S 保存</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 底部状态栏 ===== -->
+  <footer id="footer-bar">
+    <span id="footer-stats">节点: 0 | 边: 0</span>
+    <span id="footer-mode">模式: 浏览</span>
+    <span id="footer-layout">布局: 力导向</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
