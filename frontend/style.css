@@ -81,6 +81,63 @@
   /* 字体 */
   --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+
+  /* 标题渐变起始色（夜间白，白天深） */
+  --title-gradient-from: #ffffff;
+}
+
+/* ============================================================
+   1b. 白天模式 — 覆盖所有颜色变量
+   ============================================================ */
+
+:root.theme-day {
+  /* 基底 — 纯白/浅灰 */
+  --bg-deep: #f5f6fa;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f0f2f7;
+  --bg-surface: #e8ebf2;
+  --bg-hover: #dee2ed;
+  --bg-active: #cdd3e3;
+
+  /* 毛玻璃色 */
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-bg-light: rgba(240, 242, 247, 0.85);
+  --glass-bg-card: rgba(248, 249, 252, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-border-hover: rgba(77, 166, 255, 0.25);
+
+  /* 主色 — 保持冰蓝，加深对比 */
+  --accent: #3b8ee5;
+  --accent-hover: #2176d1;
+  --accent-subtle: rgba(59, 142, 229, 0.08);
+  --accent-glow: rgba(59, 142, 229, 0.15);
+  --accent-glow-strong: rgba(59, 142, 229, 0.3);
+
+  /* 文字层级 — 黑字 */
+  --text-primary: #1a1a2e;
+  --text-secondary: #2d2d44;
+  --text-tertiary: rgba(0, 0, 0, 0.5);
+  --text-muted: rgba(0, 0, 0, 0.2);
+  --text-faint: rgba(0, 0, 0, 0.06);
+
+  /* 功能色 */
+  --danger: #d63031;
+  --danger-hover: #e74c3c;
+  --success: #27ae60;
+  --warning: #d35400;
+
+  /* 分隔线 */
+  --divider: rgba(0, 0, 0, 0.06);
+  --divider-light: rgba(0, 0, 0, 0.08);
+
+  /* 阴影 — 调亮 */
+  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 4px 24px rgba(59, 142, 229, 0.12);
+
+  /* 标题渐变起始色 */
+  --title-gradient-from: #1a1a2e;
 }
 
 /* ============================================================
@@ -200,7 +257,7 @@ body::after {
   letter-spacing: 2px;
   text-transform: uppercase;
   white-space: nowrap;
-  background: linear-gradient(135deg, #ffffff, var(--accent));
+  background: linear-gradient(135deg, var(--title-gradient-from), var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

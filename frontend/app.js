@@ -455,6 +455,29 @@ document.getElementById('btn-open-tab') && document.getElementById('btn-open-tab
 document.getElementById('btn-open-node-tab').addEventListener('click', function() { if(state.selectedId) openTab(state.selectedId); });
 document.getElementById('btn-open-node-tab2').addEventListener('click', function() { if(state.selectedId) openTab(state.selectedId); });
 
+// ===== Theme Toggle =====
+var themeBtn = document.getElementById('btn-theme');
+function setTheme(day) {
+  if(day) {
+    document.documentElement.classList.add('theme-day');
+    themeBtn.textContent = '☀️';
+    themeBtn.title = '切换夜晚模式';
+  } else {
+    document.documentElement.classList.remove('theme-day');
+    themeBtn.textContent = '🌙';
+    themeBtn.title = '切换白天模式';
+  }
+  try { localStorage.setItem('kg-theme', day ? 'day' : 'night'); } catch(e) {}
+}
+themeBtn.addEventListener('click', function() {
+  setTheme(!document.documentElement.classList.contains('theme-day'));
+});
+// 从 localStorage 恢复主题
+try {
+  var saved = localStorage.getItem('kg-theme');
+  if(saved === 'day') setTheme(true);
+} catch(e) {}
+
 // ===== Init =====
 async function init() { try { initNet(); await rf(); } catch(e) { sm("启动失败: "+e.message); console.error(e); } }
 window.addEventListener("error",function(e){console.error("[GLOBAL-ERR] "+e.message+" at "+e.filename+":"+e.lineno);});
