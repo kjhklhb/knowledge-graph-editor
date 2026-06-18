@@ -457,6 +457,23 @@ document.getElementById('btn-open-node-tab2').addEventListener('click', function
 
 // ===== Theme Toggle =====
 var themeBtn = document.getElementById('btn-theme');
+
+// 更新 vis-network 渲染主题（字体描边、节点/边高亮色）
+function updateVisTheme(day) {
+  if(!state.network) return;
+  var stroke = day ? '#e8ebf2' : '#080a10';
+  var hlEdge = day ? '#3b8ee5' : '#4da6ff';
+  state.network.setOptions({
+    nodes: { font: { strokeColor: stroke } },
+    edges: { font: { strokeColor: stroke } },
+  });
+  // 更新所有已存在的边的高亮色
+  state.edges.forEach(function(e) {
+    var raw = e.color && e.color.color ? e.color.color : '#95A5A6';
+    state.edges.update({ id: e.id, color: { color: raw, highlight: hlEdge } });
+  });
+}
+
 function setTheme(day) {
   if(day) {
     document.documentElement.classList.add('theme-day');
@@ -468,6 +485,7 @@ function setTheme(day) {
     themeBtn.title = '切换白天模式';
   }
   try { localStorage.setItem('kg-theme', day ? 'day' : 'night'); } catch(e) {}
+  updateVisTheme(day);
 }
 themeBtn.addEventListener('click', function() {
   setTheme(!document.documentElement.classList.contains('theme-day'));
@@ -475,7 +493,7 @@ themeBtn.addEventListener('click', function() {
 // 从 localStorage 恢复主题
 try {
   var saved = localStorage.getItem('kg-theme');
-  if(saved === 'day') setTheme(true);
+  if(saved === 'day') { setTheme(true); }
 } catch(e) {}
 
 // ===== Init =====

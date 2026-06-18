@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    知识图谱编辑器 — 电影感沉浸主题 v2
    ============================================================
    设计规格：
@@ -84,6 +84,12 @@
 
   /* 标题渐变起始色（夜间白，白天深） */
   --title-gradient-from: #ffffff;
+  /* 图谱画布背景渐变（夜间深色，白天浅色） */
+  --graph-bg-start: #0a0c14;
+  --graph-bg-end: #080a10;
+  --graph-bg-radial: radial-gradient(ellipse at 50% 40%, rgba(12, 16, 28, 0.8) 0%, transparent 60%);
+  --graph-bg-accent: radial-gradient(ellipse at 80% 60%, rgba(77, 166, 255, 0.03) 0%, transparent 50%);
+  /* 图谱画布背景渐变 */
 }
 
 /* ============================================================
@@ -138,6 +144,11 @@
 
   /* 标题渐变起始色 */
   --title-gradient-from: #1a1a2e;
+  /* 图谱画布背景渐变（白天浅色） */
+  --graph-bg-start: #e8ebf2;
+  --graph-bg-end: #f0f2f7;
+  --graph-bg-radial: radial-gradient(ellipse at 50% 40%, rgba(200, 205, 220, 0.6) 0%, transparent 60%);
+  --graph-bg-accent: radial-gradient(ellipse at 80% 60%, rgba(59, 142, 229, 0.04) 0%, transparent 50%);
 }
 
 /* ============================================================
@@ -429,7 +440,7 @@ body::after {
   background:
     radial-gradient(ellipse at 50% 40%, rgba(12, 16, 28, 0.8) 0%, transparent 60%),
     radial-gradient(ellipse at 80% 60%, rgba(77, 166, 255, 0.03) 0%, transparent 50%),
-    linear-gradient(180deg, #0a0c14 0%, #080a10 100%);
+    linear-gradient(180deg, var(--graph-bg-start) 0%, var(--graph-bg-end) 100%);
 }
 
 #graph-vis {
@@ -697,7 +708,7 @@ body::after {
 }
 
 .btn-primary:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   background: rgba(77, 166, 255, 0.15);
   border-color: var(--accent);
   transform: translateY(-2px);
