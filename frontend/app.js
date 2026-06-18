@@ -100,6 +100,9 @@ function applyLayout(name) { console.log("[LAYOUT] applyLayout('"+name+"')");
     state.network.setOptions({ layout: { hierarchical: { enabled: false }, improvedLayout: true, randomSeed: Date.now() }, physics: p.physics });
     state.network.setOptions({ physics: { enabled: true } }); state.network.startSimulation();
   } else {
+    // 切换到层级布局前剥离所有节点的 level，避免 vis 内部已缓存 level 导致冲突
+    var ids = state.nodes.getIds();
+    for(var i=0;i<ids.length;i++) { state.nodes.update({ id: ids[i], level: undefined }); }
     state.network.setOptions({ layout: p.layout, physics: { enabled: false } });
     state.network.storePositions();
   }
@@ -115,6 +118,9 @@ function tidyLayout() { console.log("[LAYOUT] tidyLayout() current="+state.curre
     state.network.startSimulation();
     state.network.once('stabilizationIterationsDone', function() { sm('\u2705 \u5e03\u5c40\u5df2\u4f18\u5316'); });
   } else {
+    // 剥离 level 避免 vis 内部缓存冲突
+    var ids = state.nodes.getIds();
+    for(var i=0;i<ids.length;i++) { state.nodes.update({ id: ids[i], level: undefined }); }
     state.network.setOptions({ layout: p.layout, physics: { enabled: false } }); state.network.redraw();
     sm('\u2705 ' + p.label + ' \u5df2\u6574\u7406');
   }
