@@ -103,7 +103,7 @@ function hClick(p) { console.log("[CLICK] hClick() nodes="+(p?p.nodes?p.nodes.le
   }
   if(nodes.length) {
     var nd = state.nodes.get(nodes[0]);
-    if (nd && nd.properties && nd.properties._type === 'display') openDpPanel(nodes[0]);
+    if (nd && nd.properties && nd.properties._type === 'display') showDisplayPanel(nodes[0]);
     else showNodePanel(nodes[0]);
   }
   else if(edges.length) showEdgePanel(edges[0]);
