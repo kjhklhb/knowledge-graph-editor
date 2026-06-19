@@ -63,10 +63,13 @@ function initNet() { console.log("[INIT] initNet() start");
   ct.addEventListener('click', function(e) { if((e.target===ct||e.target.id==='graph-vis')&&!state.addingEdge.active) clrSel(); });
   state.network.once('stabilizationIterationsDone', function() { sm('\u5c31\u7eea'); });
   state.network.on('viewChanged', function() { updateDispHandle(); });
-  // 拖拽结束自动置顶
+  // 拖拽结束自动置顶（remove + re-add 改变绘制顺序）
   state.network.on('dragEnd', function(params) {
     if (params.nodes && params.nodes.length) {
-      state.network.bringToFront(params.nodes);
+      for (var i = 0; i < params.nodes.length; i++) {
+        var nd = state.nodes.get(params.nodes[i]);
+        if (nd) { state.nodes.remove(params.nodes[i]); state.nodes.add(nd); }
+      }
     }
   });
 }
@@ -313,8 +316,10 @@ async function deleteSelected() { console.log("[ACTION] deleteSelected() start")
   var sn = state.network.getSelectedNodes(), se = state.network.getSelectedEdges();
   if(!sn.length&&!se.length) { sm('\u8bf7\u5148\u9009\u4e2d'); return; }
   try {
+    // 先删边（避免被节点级联删除后 frontend 再删报错）
+    for(var i=0;i<se.length;i++) { try { await ca('delete_edge', { edge_id: se[i] }); } catch(e) {} state.edges.remove(se[i]); }
+    // 再删节点（backend 级联删除关联边）
     for(var i=0;i<sn.length;i++) { await ca('delete_node', { node_id: sn[i] }); state.nodes.remove(sn[i]); }
-    for(var i=0;i<se.length;i++) { await ca('delete_edge', { edge_id: se[i] }); state.edges.remove(se[i]); }
     sm('\u2705 \u5df2\u5220\u9664 ' + sn.length + ' \u8282\u70b9, ' + se.length + ' \u8fb9');
     clrSel(); st(); eh(state.nodes.length===0);
   } catch(e) { sm('\u274c \u5931\u8d25: ' + e.message); }
