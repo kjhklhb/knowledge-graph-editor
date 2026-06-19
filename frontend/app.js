@@ -63,6 +63,12 @@ function initNet() { console.log("[INIT] initNet() start");
   ct.addEventListener('click', function(e) { if((e.target===ct||e.target.id==='graph-vis')&&!state.addingEdge.active) clrSel(); });
   state.network.once('stabilizationIterationsDone', function() { sm('\u5c31\u7eea'); });
   state.network.on('viewChanged', function() { updateDispHandle(); });
+  // 拖拽结束自动置顶
+  state.network.on('dragEnd', function(params) {
+    if (params.nodes && params.nodes.length) {
+      state.network.bringToFront(params.nodes);
+    }
+  });
 }
 
 // ===== Click Handler =====
@@ -142,7 +148,7 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
       var dw = Math.max(200, parseInt(props._dispW) || 280);
       var dh = Math.max(120, parseInt(props._dispH) || 180);
       return {
-        id: n.id, label: n.label||'',
+        id: n.id, label: '', // label will be set after edges loaded
         color: { background: 'var(--bg-surface)', border: 'var(--accent)', highlight: { background: 'var(--bg-surface)', border: 'var(--accent)' } },
         shape: 'box', borderRadius: 12,
         widthConstraint: dw,
@@ -172,6 +178,12 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
   });
   state.nodes.clear(); state.edges.clear();
   state.nodes.add(na); state.edges.add(ea);
+  // 更新显示节点 label（依赖边已加载）
+  state.nodes.forEach(function(n) {
+    if (n.properties && n.properties._type === 'display') {
+      state.nodes.update({ id: n.id, label: buildDisplayLabel(n.id, n.properties._label || n.title || '') });
+    }
+  });
   st(); eh(na.length===0);
   sm('\u5df2\u52a0\u8f7d ' + na.length + ' \u8282\u70b9, ' + ea.length + ' \u8fb9');
 }
@@ -424,96 +436,6 @@ function getRelatedNodes(nodeId) {
   return related;
 }
 
-// ----- SVG 连线 -----
-
-function removeKcLines() {
-  var old = document.getElementById('kc-lines-svg');
-  if (old) old.remove();
-  // 移除网络事件监听
-  if (state.network) {
-    state.network.off('viewChanged', updateKcLines);
-    state.network.off('dragEnd', updateKcLines);
-  }
-}
-
-function updateKcLines() {
-  var svg = document.getElementById('kc-lines-svg');
-  if (!svg || !state.network || !state.kcNodeId) return;
-  var card = document.getElementById('knowledge-card');
-  if (card.classList.contains('hidden')) return;
-
-  var ct = document.getElementById('graph-container');
-  var ctRect = ct.getBoundingClientRect();
-  var cardRect = card.getBoundingClientRect();
-
-  // 卡片连接点：卡片左侧垂直中点
-  var cx = cardRect.left - ctRect.left;
-  var cy = cardRect.top - ctRect.top + (cardRect.height / 2);
-
-  // 收集所有需要连线的节点（自身 + 关联节点）
-  var allIds = [state.kcNodeId];
-  var related = getRelatedNodes(state.kcNodeId);
-  for (var i = 0; i < related.length; i++) allIds.push(related[i].id);
-
-  var positions = state.network.getPositions(allIds);
-  var lines = svg.querySelectorAll('.kc-line');
-  var dots = svg.querySelectorAll('.kc-line-dot');
-
-  for (var i = 0; i < allIds.length; i++) {
-    var nid = allIds[i];
-    if (!nid || !positions || !positions[nid]) continue;
-    var domPos = state.network.canvasToDOM(positions[nid]);
-    if (!domPos) continue;
-    var nx = domPos.x, ny = domPos.y;
-
-    if (lines[i]) {
-      lines[i].setAttribute('x1', cx);
-      lines[i].setAttribute('y1', cy);
-      lines[i].setAttribute('x2', nx);
-      lines[i].setAttribute('y2', ny);
-    }
-    if (dots[i]) {
-      dots[i].setAttribute('cx', nx);
-      dots[i].setAttribute('cy', ny);
-    }
-  }
-}
-
-function createKcLines(nodeId) {
-  removeKcLines();
-  var ct = document.getElementById('graph-container');
-  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.id = 'kc-lines-svg';
-  ct.appendChild(svg);
-
-  // 收集需要连线的节点
-  var allIds = [nodeId];
-  var related = getRelatedNodes(nodeId);
-  for (var i = 0; i < related.length; i++) allIds.push(related[i].id);
-
-  for (var i = 0; i < allIds.length; i++) {
-    var n = state.nodes.get(allIds[i]);
-    if (!n) continue;
-    // 连线
-    var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('class', 'kc-line');
-    svg.appendChild(line);
-    // 末端圆点
-    var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    dot.setAttribute('class', 'kc-line-dot');
-    dot.setAttribute('r', '3');
-    svg.appendChild(dot);
-  }
-
-  updateKcLines();
-
-  // 监听网络视图变化
-  if (state.network) {
-    state.network.on('viewChanged', updateKcLines);
-    state.network.on('dragEnd', updateKcLines);
-  }
-}
-
 // ----- 显示 / 关闭 -----
 
 function showKnowledgeCard(nodeId) {
@@ -570,13 +492,11 @@ function showKnowledgeCard(nodeId) {
   }
 
   card.classList.remove('hidden');
-  createKcLines(nodeId);
   sm('\u2705 \u77e5\u8bc6\u5361\u7247\u5df2\u6253\u5f00');
 }
 
 function closeKnowledgeCard() {
   document.getElementById('knowledge-card').classList.add('hidden');
-  removeKcLines();
   state.kcNodeId = null;
 }
 
@@ -601,7 +521,6 @@ document.addEventListener('mousemove', function(e) {
   var ny = Math.max(0, Math.min(crect.height - 40, e.clientY - kcDragData.offsetY));
   card.style.left = nx + 'px';
   card.style.top = ny + 'px';
-  updateKcLines();
 });
 
 document.addEventListener('mouseup', function() { kcDragData = null; });
@@ -629,7 +548,6 @@ document.addEventListener('mousemove', function(e) {
   var nh = Math.max(120, kcResizeData.startH + dh);
   card.style.width = nw + 'px';
   card.style.height = nh + 'px';
-  updateKcLines();
 });
 
 document.addEventListener('mouseup', function() { kcResizeData = null; });
@@ -638,7 +556,6 @@ document.addEventListener('mouseup', function() { kcResizeData = null; });
 document.getElementById('kc-resize-handle').addEventListener('dblclick', function(e) {
   e.stopPropagation();
   document.getElementById('knowledge-card').style.removeProperty('height');
-  updateKcLines();
 });
 
 // Close
@@ -648,6 +565,25 @@ document.getElementById('kc-close').addEventListener('click', closeKnowledgeCard
 
 function isDisplayNode(nd) {
   return nd && nd.properties && nd.properties._type === 'display';
+}
+
+function buildDisplayLabel(nodeId, label) {
+  var related = getRelatedNodes(nodeId);
+  var html = '<div style="font-weight:500;font-size:13px;padding-bottom:5px;text-align:center;">\u{1F4FA} ' + (label || '\u663e\u793a\u533a') + '</div>';
+  html += '<div style="border-top:1px solid rgba(255,255,255,0.08);margin:2px 0 5px 0;"></div>';
+  if (related.length) {
+    for (var i = 0; i < related.length; i++) {
+      var r = related[i];
+      if (isDisplayNode(r)) continue;
+      var rc = typeof r.color === 'object' ? r.color.background : (r.color || '#00E8C6');
+      html += '<div style="font-size:11px;padding:2px 4px;opacity:0.75;white-space:nowrap;">';
+      html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + rc + ';margin-right:5px;"></span>';
+      html += (r.label || '?') + '</div>';
+    }
+  } else {
+    html += '<div style="font-size:10px;opacity:0.35;text-align:center;padding-top:4px;">\u6682\u65e0\u5173\u8054</div>';
+  }
+  return html;
 }
 
 function calcDisplaySize(nodeId) {
@@ -708,11 +644,11 @@ async function addDisplayNode() {
     if (n && !isDisplayNode(n)) selNormal.push(sel[i]);
   }
   try {
-    var props = { _type: 'display', _dispW: 280, _dispH: 180 };
+    var props = { _type: 'display', _dispW: 280, _dispH: 180, _label: '\u663e\u793a\u533a' };
     var r = await ca('add_node', { label: '\u663e\u793a\u533a', color: '#00E8C6', level: 1, properties: props });
-    // 在 vis-network 中创建
+    // 在 vis-network 中创建（label 稍后更新）
     state.nodes.add({
-      id: r.id, label: '\u663e\u793a\u533a',
+      id: r.id, label: '',
       color: { background: 'var(--bg-surface)', border: 'var(--accent)', highlight: { background: 'var(--bg-surface)', border: 'var(--accent)' } },
       shape: 'box', borderRadius: 12,
       widthConstraint: 280,
@@ -737,7 +673,7 @@ async function addDisplayNode() {
     // 按选中节点等级调整尺寸
     if (selNormal.length) {
       var sz = calcDisplaySize(r.id);
-      var updProps = { _type: 'display', _dispW: sz.w, _dispH: sz.h };
+      var updProps = { _type: 'display', _dispW: sz.w, _dispH: sz.h, _label: '\u663e\u793a\u533a' };
       await ca('update_node', { node_id: r.id, properties: updProps });
       state.nodes.update({
         id: r.id, properties: updProps,
@@ -745,6 +681,8 @@ async function addDisplayNode() {
         margin: { top: Math.max(30, (sz.h - 30) / 2), right: 14, bottom: Math.max(30, (sz.h - 30) / 2), left: 14 }
       });
     }
+    // 更新 label 显示关联节点
+    state.nodes.update({ id: r.id, label: buildDisplayLabel(r.id, '\u663e\u793a\u533a') });
     eh(false); st(); sm('\u2705 \u663e\u793a\u8282\u70b9\u5df2\u521b\u5efa');
     state.network.selectNodes([r.id]);
     showDisplayPanel(r.id);
@@ -797,12 +735,12 @@ async function saveDisplayNode() {
   var dh = parseInt(document.getElementById('edit-display-height').textContent) || 180;
   dw = Math.max(200, Math.min(800, dw));
   dh = Math.max(120, Math.min(600, dh));
-  var props = { _type: 'display', _dispW: dw, _dispH: dh };
+  var props = { _type: 'display', _dispW: dw, _dispH: dh, _label: label };
   try {
     sm('\u4fdd\u5b58\u4e2d...');
     await ca('update_node', { node_id: id, label: label, properties: props });
     state.nodes.update({
-      id: id, label: label, properties: props,
+      id: id, label: buildDisplayLabel(id, label), properties: props,
       widthConstraint: dw,
       margin: { top: Math.max(30, (dh - 30) / 2), right: 14, bottom: Math.max(30, (dh - 30) / 2), left: 14 }
     });

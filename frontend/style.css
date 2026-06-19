@@ -936,31 +936,6 @@ body::after {
   border-color: var(--accent);
 }
 
-/* 知识卡片连线 SVG */
-#kc-lines-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 490;
-  overflow: visible;
-}
-
-.kc-line {
-  stroke: var(--accent);
-  stroke-width: 1.5;
-  stroke-dasharray: 5, 4;
-  opacity: 0.4;
-  transition: opacity 0.3s ease;
-}
-
-/* 连线末端圆点 */
-.kc-line-dot {
-  fill: var(--accent);
-  opacity: 0.5;
-}
 
 /* 显示节点面板 */
 .display-connected-list {
