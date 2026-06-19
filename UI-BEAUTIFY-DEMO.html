@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>知识图谱编辑器 — UI 美化演示</title>
+  <style>
+    /* ============================================================
+       知识图谱编辑器 — UI 美化设计演示
+       本文件展示美化后的视觉目标效果
+       ============================================================ */
+
+    /* ===== 1. 颜色体系 ===== */
+    :root {
+      /* 基底 — 深色 */
+      --bg-deep: #080a10;
+      --bg-primary: #0c0e16;
+      --bg-secondary: #11141f;
+      --bg-surface: #181c2a;
+      --bg-hover: #1f2440;
+      --bg-active: #2a3060;
+
+      /* 毛玻璃 */
+      --glass-bg: rgba(12, 14, 22, 0.88);
+      --glass-bg-light: rgba(24, 28, 42, 0.82);
+      --glass-bg-card: rgba(24, 28, 42, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.05);
+      --glass-border-hover: rgba(77, 166, 255, 0.15);
+
+      /* 主色 — 冰蓝 */
+      --accent: #4da6ff;
+      --accent-hover: #70b5ff;
+      --accent-subtle: rgba(77, 166, 255, 0.08);
+      --accent-glow: rgba(77, 166, 255, 0.2);
+      --accent-glow-strong: rgba(77, 166, 255, 0.35);
+
+      /* 文字 */
+      --text-primary: #ffffff;
+      --text-secondary: #f0f4ff;
+      --text-tertiary: rgba(255, 255, 255, 0.55);
+      --text-muted: rgba(255, 255, 255, 0.25);
+      --text-faint: rgba(255, 255, 255, 0.08);
+
+      /* 功能色 */
+      --danger: #ff4757;
+      --success: #4dc878;
+      --warning: #e67e22;
+
+      /* 分隔线 */
+      --divider: rgba(255, 255, 255, 0.04);
+      --divider-light: rgba(255, 255, 255, 0.06);
+
+      /* 圆角 */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-pill: 9999px;
+
+      /* 阴影 */
+      --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.6);
+      --shadow-glow: 0 4px 24px rgba(77, 166, 255, 0.12);
+
+      /* 动效 */
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --transition: 0.4s var(--ease-out);
+      --transition-fast: 0.2s var(--ease-out);
+      --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      /* 字体 */
+      --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+    }
+
+    /* ===== 1b. 日间模式 ===== */
+    :root.theme-day {
+      --bg-deep: #f5f6fa;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f0f2f7;
+      --bg-surface: #e8ebf2;
+      --bg-hover: #dee2ed;
+      --bg-active: #cdd3e3;
+
+      --glass-bg: rgba(255, 255, 255, 0.92);
+      --glass-bg-light: rgba(240, 242, 247, 0.85);
+      --glass-bg-card: rgba(248, 249, 252, 0.85);
+      --glass-border: rgba(0, 0, 0, 0.06);
+      --glass-border-hover: rgba(59, 142, 229, 0.25);
+
+      --accent: #3b8ee5;
+      --accent-hover: #2176d1;
+      --accent-subtle: rgba(59, 142, 229, 0.08);
+      --accent-glow: rgba(59, 142, 229, 0.15);
+      --accent-glow-strong: rgba(59, 142, 229, 0.3);
+
+      --text-primary: #1a1a2e;
+      --text-secondary: #2d2d44;
+      --text-tertiary: rgba(0, 0, 0, 0.5);
+      --text-muted: rgba(0, 0, 0, 0.2);
+      --text-faint: rgba(0, 0, 0, 0.06);
+
+      --danger: #d63031;
+      --success: #27ae60;
+      --warning: #d35400;
+
+      --divider: rgba(0, 0, 0, 0.06);
+      --divider-light: rgba(0, 0, 0, 0.08);
+
+      --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.12);
+      --shadow-glow: 0 4px 24px rgba(59, 142, 229, 0.12);
+    }
+
+    /* ===== 2. 全局 ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font-sans);
+      background: radial-gradient(ellipse at 50% 0%, #0f1525 0%, var(--bg-deep) 100%);
+      color: var(--text-primary);
+      overflow: hidden;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 噪点纹理叠加 — 电影胶片颗粒感 */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.02;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 256px 256px;
+    }
+
+    /* ===== 3. Keyframes ===== */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 12px var(--accent-glow); }
+      50% { box-shadow: 0 0 28px var(--accent-glow-strong); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ===== 4. 顶部工具栏 ===== */
+    #demo-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      padding: 0 40px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px) saturate(1.2);
+      -webkit-backdrop-filter: blur(20px) saturate(1.2);
+      border-bottom: 1px solid var(--glass-border);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 100;
+      animation: slideInDown 0.5s var(--ease-out);
+    }
+
+    #demo-toolbar::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 15%;
+      right: 15%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.2;
+    }
+
+    .tb-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .tb-logo {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--accent), #7c5cff);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 0 16px rgba(77, 166, 255, 0.3);
+      flex-shrink: 0;
+    }
+
+    .tb-title {
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      background: linear-gradient(135deg, var(--text-primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tb-center {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .tb-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* 按钮组分割线 */
+    .tb-sep {
+      width: 1px;
+      height: 18px;
+      background: var(--divider-light);
+      margin: 0 12px;
+    }
+
+    /* ---- 工具栏按钮 (紧凑轻量) ---- */
+    .tb-btn {
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      font-family: var(--font-sans);
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    .tb-btn:hover {
+      background: var(--accent-subtle);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+
+    .tb-btn:active {
+      transform: translateY(0) scale(0.97);
+    }
+
+    .tb-btn .icon {
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    /* ---- 下拉框 ---- */
+    .tb-select {
+      padding: 5px 32px 5px 12px;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.02);
+      color: var(--text-tertiary);
+      font-size: 11px;
+      font-family: var(--font-sans);
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      outline: none;
+      transition: all var(--transition-fast);
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='rgba(255,255,255,0.35)' d='M2.5 3.5l2.5 2.5 2.5-2.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    .tb-select:hover {
+      border-color: var(--glass-border-hover);
+      color: var(--text-secondary);
+    }
+    .tb-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-subtle);
+    }
+
+    /* ---- 搜索框 ---- */
+    .tb-search {
+      padding: 5px 14px;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.02);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: var(--font-sans);
+      width: 160px;
+      outline: none;
+      transition: all var(--transition);
+    }
+    .tb-search::placeholder {
+      color: var(--text-muted);
+      font-weight: 300;
+    }
+    .tb-search:focus {
+      border-color: var(--accent);
+      box-shadow: 
+        inset 2px 0 0 var(--accent),
+        0 0 0 2px var(--accent-subtle);
+      width: 200px;
+    }
+
+    /* ---- 状态指示器 ---- */
+    .tb-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(77, 200, 120, 0.5);
+      animation: dotPulse 2s ease-in-out infinite;
+    }
+
+    /* ===== 5. 主体布局 ===== */
+    #demo-main {
+      display: flex;
+      height: calc(100vh - 52px - 28px);
+      flex: 1;
+      position: relative;
+    }
+
+    /* ===== 6. 画布区域 — 干净深空渐变 ===== */
+    #demo-canvas {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 40%, rgba(12, 16, 28, 0.5) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 60%, rgba(77, 166, 255, 0.05) 0%, transparent 50%),
+        linear-gradient(160deg, var(--bg-primary) 0%, var(--bg-deep) 100%);
+      transition: background 0.6s ease;
+    }
+
+    :root.theme-day #demo-canvas {
+      background:
+        radial-gradient(ellipse at 50% 30%, rgba(200, 210, 230, 0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 70%, rgba(59, 142, 229, 0.04) 0%, transparent 50%),
+        linear-gradient(160deg, #f0f2f7 0%, #e4e7f0 100%);
+    }
+
+    /* 画布内的模拟节点 */
+    .demo-graph {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    .demo-node {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 500;
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
+      z-index: 2;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3), inset 0 -2px 6px rgba(0,0,0,0.2);
+    }
+
+    .demo-node:hover {
+      transform: scale(1.15);
+      z-index: 10;
+    }
+
+    .demo-node.selected {
+      box-shadow: 0 0 0 3px var(--accent), 0 0 24px var(--accent-glow-strong);
+      transform: scale(1.08);
+    }
+
+    .demo-edge-line {
+      position: absolute;
+      height: 2px;
+      background: rgba(149, 165, 166, 0.4);
+      transform-origin: left center;
+      z-index: 1;
+    }
+
+    /* 空状态 */
+    #demo-empty {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #demo-empty .empty-icon {
+      font-size: 72px;
+      opacity: 0.15;
+      margin-bottom: 16px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    #demo-empty .empty-title {
+      font-size: 16px;
+      font-weight: 200;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    #demo-empty .empty-sub {
+      font-size: 12px;
+      font-weight: 300;
+      letter-spacing: 1px;
+      color: var(--text-faint);
+    }
+
+    /* 自定义导航按钮（右下角模拟） */
+    .demo-nav {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .demo-nav-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--glass-bg-light);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--glass-border);
+      color: var(--text-tertiary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .demo-nav-btn:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-glow);
+      transform: scale(1.05);
+    }
+
+    /* ===== 7. 属性面板 ===== */
+    #demo-panel {
+      width: 320px;
+      min-width: 320px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(1.2);
+      -webkit-backdrop-filter: blur(24px) saturate(1.2);
+      border-left: 1px solid var(--glass-border);
+      overflow-y: auto;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      animation: slideInRight 0.6s var(--ease-out);
+    }
+
+    #demo-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(77, 166, 255, 0.1), transparent);
+    }
+
+    .panel-section {
+      padding: 28px 24px;
+    }
+
+    .panel-section:not(.hidden) {
+      animation: fadeUp 0.4s var(--ease-out);
+    }
+
+    .panel-placeholder {
+      text-align: center;
+      padding: 100px 20px;
+      color: var(--text-muted);
+    }
+
+    .panel-placeholder .ph-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+      opacity: 0.15;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .panel-placeholder .ph-text {
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 1.5px;
+      color: var(--text-faint);
+      line-height: 2;
+    }
+
+    .panel-placeholder .ph-shortcuts {
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--text-faint);
+    }
+
+    .panel-placeholder .ph-shortcuts span {
+      display: inline-block;
+      padding: 1px 6px;
+      border: 1px solid var(--glass-border);
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      margin: 0 2px;
+    }
+
+    /* ---- 面板标题 ---- */
+    .panel-title {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--divider);
+    }
+
+    .panel-title .pi {
+      font-size: 12px;
+      opacity: 0.5;
+    }
+
+    .panel-title .pid {
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-left: auto;
+    }
+
+    .panel-title .pt-btn {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .panel-title .pt-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ---- 表单 ---- */
+    .panel-body {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .fg {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .fg label {
+      font-size: 9px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .fg-input {
+      padding: 9px 12px;
+      border: 1px solid var(--divider-light);
+      border-radius: var(--radius-sm);
+      background: var(--glass-bg-card);
+      backdrop-filter: blur(4px);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: var(--font-sans);
+      font-weight: 300;
+      outline: none;
+      transition: all var(--transition-fast);
+    }
+
+    .fg-input::placeholder {
+      color: var(--text-faint);
+    }
+
+    .fg-input:focus {
+      border-color: var(--accent);
+      box-shadow:
+        inset 2px 0 0 var(--accent),
+        0 0 0 2px var(--accent-subtle);
+    }
+
+    .fg-input:read-only {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .fg-row {
+      display: flex;
+      gap: 14px;
+    }
+
+    .fg-row .fg { flex: 1; }
+
+    /* 颜色选择器 */
+    .color-picker-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .color-picker-wrap input[type="color"] {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--divider-light);
+      border-radius: 50%;
+      background: none;
+      cursor: pointer;
+      padding: 2px;
+      transition: border var(--transition-fast);
+    }
+
+    .color-picker-wrap input[type="color"]:hover {
+      border-color: var(--accent);
+    }
+
+    .color-picker-wrap input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 2px;
+    }
+    .color-picker-wrap input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 50%;
+    }
+
+    .color-hex {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-tertiary);
+    }
+
+    /* 层级选择器 */
+    .level-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .level-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--glass-border);
+      border-radius: 50%;
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .level-btn:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+      background: var(--accent-subtle);
+    }
+
+    .level-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      min-width: 36px;
+      text-align: center;
+    }
+
+    .level-dots {
+      display: flex;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .level-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: all var(--transition-fast);
+    }
+
+    .level-dot.active {
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent-glow);
+    }
+
+    /* 文本域 */
+    .fg-textarea {
+      padding: 9px 12px;
+      border: 1px solid var(--divider-light);
+      border-radius: var(--radius-sm);
+      background: var(--glass-bg-card);
+      backdrop-filter: blur(4px);
+      color: var(--text-primary);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 300;
+      outline: none;
+      resize: vertical;
+      transition: all var(--transition-fast);
+      line-height: 1.6;
+    }
+
+    .fg-textarea::placeholder {
+      color: var(--text-faint);
+    }
+    .fg-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-subtle);
+    }
+
+    /* 按钮组 */
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+      justify-content: flex-end;
+    }
+
+    /* ---- 按钮系统 ---- */
+
+    /* 主按钮 */
+    .btn-primary {
+      padding: 8px 22px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--accent), #3a8be5);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: var(--font-sans);
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      box-shadow: 0 2px 12px rgba(77, 166, 255, 0.2);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(77, 166, 255, 0.35);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0) scale(0.97);
+      box-shadow: 0 2px 8px rgba(77, 166, 255, 0.2);
+    }
+
+    /* 次按钮 */
+    .btn-secondary {
+      padding: 8px 22px;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.03);
+      color: var(--text-tertiary);
+      font-size: 12px;
+      font-family: var(--font-sans);
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: var(--glass-border-hover);
+      color: var(--text-secondary);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary:active {
+      transform: translateY(0);
+    }
+
+    /* 危险按钮 */
+    .btn-danger {
+      padding: 8px 22px;
+      border: 1px solid rgba(255, 71, 87, 0.2);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 71, 87, 0.06);
+      color: var(--danger);
+      font-size: 12px;
+      font-family: var(--font-sans);
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-danger:hover {
+      background: rgba(255, 71, 87, 0.12);
+      border-color: var(--danger);
+      transform: translateY(-1px);
+    }
+
+    /* ===== 8. 底部状态栏 ===== */
+    #demo-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 28px;
+      padding: 0 40px;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--glass-border);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      flex-shrink: 0;
+      letter-spacing: 0.6px;
+      position: relative;
+      z-index: 100;
+      animation: fadeIn 0.8s var(--ease-out);
+    }
+
+    #demo-footer .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #demo-footer .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #demo-footer .fd-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.5;
+      transition: opacity var(--transition-fast);
+    }
+
+    #demo-footer .fd-item:hover {
+      opacity: 0.8;
+    }
+
+    .fd-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px rgba(77, 200, 120, 0.4);
+    }
+
+    /* ===== 9. 快捷键帮助面板 (模拟) ===== */
+    #demo-shortcuts {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s var(--ease-out);
+    }
+
+    #demo-shortcuts.open {
+      pointer-events: auto;
+      opacity: 1;
+    }
+
+    .sc-backdrop {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(6px);
+    }
+
+    .sc-panel {
+      position: relative;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 32px;
+      width: 520px;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: fadeUp 0.4s var(--ease-out);
+    }
+
+    .sc-panel h2 {
+      font-size: 15px;
+      font-weight: 300;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .sc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .sc-group h4 {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--divider);
+    }
+
+    .sc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .sc-row span {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-weight: 300;
+    }
+
+    .sc-row kbd {
+      display: inline-block;
+      padding: 2px 7px;
+      border: 1px solid var(--glass-border);
+      border-radius: 4px;
+      background: rgba(255,255,255,0.03);
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+      letter-spacing: 0.3px;
+      box-shadow: inset 0 -1px 2px rgba(0,0,0,0.2);
+    }
+
+    .sc-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--glass-border);
+      border-radius: 50%;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sc-close:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-primary);
+      border-color: var(--glass-border-hover);
+    }
+
+    /* ===== 10. 标签页弹窗 (模拟) ===== */
+    #demo-tab {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s var(--ease-out);
+    }
+
+    #demo-tab.open {
+      pointer-events: auto;
+      opacity: 1;
+    }
+
+    .tab-panel {
+      position: relative;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 760px;
+      height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: fadeUp 0.4s var(--ease-out);
+    }
+
+    .tab-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--glass-border);
+      flex-shrink: 0;
+    }
+
+    .tab-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .tab-dot {
+      font-size: 12px;
+      filter: drop-shadow(0 0 4px currentColor);
+    }
+
+    .tab-title-input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid transparent;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-weight: 300;
+      font-family: var(--font-sans);
+      letter-spacing: 0.3px;
+      outline: none;
+      flex: 1;
+      padding: 3px 0;
+      transition: border var(--transition-fast);
+    }
+
+    .tab-title-input:focus {
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-badge {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      padding: 2px 8px;
+      border: 1px solid var(--accent-subtle);
+      border-radius: var(--radius-pill);
+      letter-spacing: 0.3px;
+    }
+
+    .tab-id-label {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: var(--text-faint);
+    }
+
+    .tab-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 24px;
+      border-bottom: 1px solid var(--divider);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      background: rgba(255,255,255,0.01);
+    }
+
+    .tab-tool-btn {
+      width: 28px;
+      height: 26px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-sans);
+    }
+
+    .tab-tool-btn:hover {
+      background: var(--accent-subtle);
+      color: var(--text-secondary);
+      border-color: var(--glass-border-hover);
+    }
+
+    .tab-tool-select {
+      padding: 2px 6px;
+      border: 1px solid var(--glass-border);
+      border-radius: 4px;
+      background: rgba(255,255,255,0.02);
+      color: var(--text-tertiary);
+      font-size: 9px;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      outline: none;
+    }
+
+    .tab-tool-sep {
+      width: 1px;
+      height: 14px;
+      background: var(--divider-light);
+      margin: 0 4px;
+    }
+
+    .tab-editor-area {
+      flex: 1;
+      padding: 24px 40px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.9;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-weight: 300;
+      outline: none;
+      letter-spacing: 0.2px;
+      max-width: 720px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .tab-editor-area:empty::before {
+      content: "在此编写节点的详细知识...";
+      color: var(--text-faint);
+    }
+
+    .tab-editor-area h2 {
+      font-size: 20px;
+      font-weight: 200;
+      letter-spacing: 2px;
+      margin: 12px 0 6px;
+    }
+
+    .tab-editor-area p {
+      margin: 6px 0;
+    }
+
+    .tab-footer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 24px;
+      border-top: 1px solid var(--divider);
+      font-size: 9px;
+      color: var(--text-faint);
+      font-family: var(--font-mono);
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+    }
+
+    /* ===== 11. 自定义滚动条 ===== */
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+    /* ===== 12. Hidden ===== */
+    .hidden { display: none !important; }
+
+    /* ===== 13. 演示说明 ===== */
+    #demo-instruction {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 500;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 12px 24px;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      text-align: center;
+      letter-spacing: 0.5px;
+      box-shadow: var(--shadow-md);
+      animation: fadeUp 2s var(--ease-out);
+    }
+
+    #demo-instruction button {
+      background: var(--accent-subtle);
+      border: 1px solid var(--glass-border-hover);
+      border-radius: 6px;
+      padding: 4px 12px;
+      color: var(--accent);
+      font-size: 11px;
+      cursor: pointer;
+      margin: 0 4px;
+      font-family: var(--font-sans);
+      transition: all var(--transition-fast);
+    }
+
+    #demo-instruction button:hover {
+      background: rgba(77, 166, 255, 0.15);
+    }
+
+    /* 日间模式覆盖 */
+    :root.theme-day .tb-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='rgba(0,0,0,0.35)' d='M2.5 3.5l2.5 2.5 2.5-2.5'/%3E%3C/svg%3E");
+    }
+
+    :root.theme-day #demo-footer {
+      background: rgba(255,255,255,0.7);
+    }
+
+    :root.theme-day .btn-secondary {
+      border-color: rgba(0,0,0,0.08);
+      background: rgba(0,0,0,0.02);
+    }
+
+    :root.theme-day .btn-secondary:hover {
+      background: rgba(0,0,0,0.04);
+    }
+
+    :root.theme-day .level-dot {
+      background: rgba(0,0,0,0.15);
+    }
+
+    :root.theme-day .sc-row kbd {
+      box-shadow: inset 0 -1px 2px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================== -->
+  <!-- 顶部工具栏                     -->
+  <!-- ============================== -->
+  <header id="demo-toolbar">
+    <div class="tb-left">
+      <div class="tb-logo">⌘</div>
+      <span class="tb-title">知识图谱编辑器</span>
+    </div>
+
+    <div class="tb-center">
+      <button class="tb-btn"><span class="icon">✚</span> 新建</button>
+      <button class="tb-btn"><span class="icon">▤</span> 打开</button>
+      <button class="tb-btn"><span class="icon">⬚</span> 保存</button>
+      <button class="tb-btn"><span class="icon">◈</span> 示例</button>
+
+      <span class="tb-sep"></span>
+
+      <button class="tb-btn"><span class="icon">✚</span> 节点</button>
+      <button class="tb-btn"><span class="icon">→</span> 边</button>
+      <button class="tb-btn"><span class="icon">✕</span> 删除</button>
+
+      <span class="tb-sep"></span>
+
+      <button class="tb-btn"><span class="icon">⟳</span> 整理</button>
+      <select class="tb-select">
+        <option>力导向</option>
+        <option>层次</option>
+        <option>辐射</option>
+      </select>
+    </div>
+
+    <div class="tb-right">
+      <input type="text" class="tb-search" placeholder="🔍 搜索..." />
+      <button class="tb-btn" id="demo-theme-btn" title="切换主题">🌙</button>
+      <button class="tb-btn" id="demo-sc-btn" title="快捷键">⌨️</button>
+      <div class="tb-status">
+        <span class="status-dot"></span>
+        <span>就绪</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================== -->
+  <!-- 主体                          -->
+  <!-- ============================== -->
+  <div id="demo-main">
+
+    <!-- 画布 -->
+    <div id="demo-canvas">
+      <!-- 空状态 (默认显示) -->
+      <div id="demo-empty">
+        <div class="empty-icon">🌐</div>
+        <div class="empty-title">图谱为空</div>
+        <div class="empty-sub">「示例」加载数据 · 点击「节点」创建 · 按 ⌘ 查看快捷键</div>
+      </div>
+
+      <!-- 模拟图谱（有数据时隐藏空状态） -->
+      <div class="demo-graph hidden" id="demo-graph-content">
+        <!-- 连线 -->
+        <div class="demo-edge-line" style="width:120px;top:120px;left:120px;transform:rotate(25deg);"></div>
+        <div class="demo-edge-line" style="width:100px;top:140px;left:200px;transform:rotate(-15deg);"></div>
+        <div class="demo-edge-line" style="width:140px;top:100px;left:280px;transform:rotate(40deg);"></div>
+        <div class="demo-edge-line" style="width:80px;top:180px;left:160px;transform:rotate(-30deg);"></div>
+        <div class="demo-edge-line" style="width:110px;top:200px;left:300px;transform:rotate(10deg);"></div>
+
+        <!-- 节点 Lv.1 大 -->
+        <div class="demo-node selected" style="width:60px;height:60px;top:100px;left:100px;background:linear-gradient(135deg,#E74C3C,#c0392b);font-size:12px;">
+          人工智能
+        </div>
+        <!-- 节点 Lv.3 -->
+        <div class="demo-node" style="width:48px;height:48px;top:80px;left:270px;background:linear-gradient(135deg,#3498DB,#2980b9);font-size:10px;">
+          机器学习
+        </div>
+        <!-- 节点 Lv.5 -->
+        <div class="demo-node" style="width:38px;height:38px;top:140px;left:190px;background:linear-gradient(135deg,#2ECC71,#27ae60);font-size:9px;">
+          NLP
+        </div>
+        <!-- 节点 Lv.4 -->
+        <div class="demo-node" style="width:42px;height:42px;top:170px;left:350px;background:linear-gradient(135deg,#9B59B6,#8e44ad);font-size:9px;">
+          深度学习
+        </div>
+        <!-- 节点 Lv.7 -->
+        <div class="demo-node" style="width:30px;height:30px;top:220px;left:120px;background:linear-gradient(135deg,#F39C12,#e67e22);font-size:8px;">
+          GPT
+        </div>
+        <!-- 节点 Lv.6 -->
+        <div class="demo-node" style="width:34px;height:34px;top:240px;left:280px;background:linear-gradient(135deg,#1ABC9C,#16a085);font-size:8px;">
+          BERT
+        </div>
+      </div>
+
+      <!-- 自定义导航按钮 -->
+      <div class="demo-nav">
+        <div class="demo-nav-btn" title="放大">＋</div>
+        <div class="demo-nav-btn" title="缩小">−</div>
+        <div class="demo-nav-btn" title="适应画布">⊞</div>
+      </div>
+    </div>
+
+    <!-- 属性面板 -->
+    <aside id="demo-panel">
+      <!-- 空状态 -->
+      <div class="panel-section" id="panel-empty-demo">
+        <div class="panel-placeholder">
+          <div class="ph-icon">👆</div>
+          <div class="ph-text">
+            点击节点或边<br>编辑属性
+          </div>
+          <div class="ph-shortcuts">
+            <span>A</span> 节点 · <span>E</span> 边 · <span>Space</span> 连接<br>
+            <span>双击</span> 打开标签页
+          </div>
+        </div>
+      </div>
+
+      <!-- 节点属性 (默认隐藏，点击演示切换) -->
+      <div class="panel-section hidden" id="panel-node-demo">
+        <h3 class="panel-title">
+          <span class="pi">●</span> 节点属性
+          <button class="pt-btn" id="demo-open-tab">📝 标签页</button>
+          <span class="pid">#a1b2c3d4</span>
+        </h3>
+        <div class="panel-body">
+          <div class="fg">
+            <label>标签</label>
+            <input type="text" class="fg-input" value="人工智能" placeholder="节点名称" />
+          </div>
+
+          <div class="fg-row">
+            <div class="fg">
+              <label>层级</label>
+              <div class="level-selector">
+                <button class="level-btn">−</button>
+                <span class="level-value">Lv.1</span>
+                <button class="level-btn">+</button>
+              </div>
+              <div class="level-dots">
+                <span class="level-dot active"></span>
+                <span class="level-dot active"></span>
+                <span class="level-dot active"></span>
+                <span class="level-dot"></span>
+                <span class="level-dot"></span>
+              </div>
+            </div>
+
+            <div class="fg">
+              <label>颜色</label>
+              <div class="color-picker-wrap">
+                <input type="color" value="#E74C3C" />
+                <span class="color-hex">#E74C3C</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="fg">
+            <label>属性 (JSON)</label>
+            <textarea class="fg-textarea" rows="3" placeholder='{"key": "value"}'>{&#8203;"领域": "计算机科学",&#8203;"创始": "1956"}</textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-primary">💾 保存</button>
+            <button class="btn-secondary">📝 标签页</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============================== -->
+  <!-- 底部状态栏                     -->
+  <!-- ============================== -->
+  <footer id="demo-footer">
+    <div class="footer-left">
+      <span class="fd-item"><span class="fd-dot"></span> 就绪</span>
+      <span class="fd-item">节点: 6 | 边: 5</span>
+    </div>
+    <div class="footer-right">
+      <span class="fd-item">模式: 浏览</span>
+      <span class="fd-item">布局: 力导向</span>
+    </div>
+  </footer>
+
+  <!-- ============================== -->
+  <!-- 快捷键帮助面板 (弹窗)          -->
+  <!-- ============================== -->
+  <div id="demo-shortcuts">
+    <div class="sc-backdrop" id="sc-backdrop"></div>
+    <div class="sc-panel">
+      <button class="sc-close" id="sc-close-btn">✕</button>
+      <h2>⌨️ 快捷键</h2>
+      <div class="sc-grid">
+        <div class="sc-group">
+          <h4>图谱操作</h4>
+          <div class="sc-row"><kbd>Ctrl+N</kbd><span>新建</span></div>
+          <div class="sc-row"><kbd>Ctrl+O</kbd><span>打开</span></div>
+          <div class="sc-row"><kbd>Ctrl+S</kbd><span>保存</span></div>
+          <div class="sc-row"><kbd>Ctrl+A</kbd><span>全选节点</span></div>
+        </div>
+        <div class="sc-group">
+          <h4>编辑</h4>
+          <div class="sc-row"><kbd>A</kbd><span>添加节点</span></div>
+          <div class="sc-row"><kbd>E</kbd><span>添加边</span></div>
+          <div class="sc-row"><kbd>Delete</kbd><span>删除选中</span></div>
+          <div class="sc-row"><kbd>F2</kbd><span>编辑标签</span></div>
+          <div class="sc-row"><kbd>Space</kbd><span>连接节点</span></div>
+        </div>
+        <div class="sc-group">
+          <h4>布局</h4>
+          <div class="sc-row"><kbd>L</kbd><span>整理布局</span></div>
+          <div class="sc-row"><kbd>1</kbd><span>力导向</span></div>
+          <div class="sc-row"><kbd>2</kbd><span>层次</span></div>
+          <div class="sc-row"><kbd>3</kbd><span>辐射</span></div>
+        </div>
+        <div class="sc-group">
+          <h4>导航</h4>
+          <div class="sc-row"><kbd>双击</kbd><span>打开标签页</span></div>
+          <div class="sc-row"><kbd>Esc</kbd><span>取消/关闭</span></div>
+          <div class="sc-row"><kbd>Tab</kbd><span>聚焦搜索</span></div>
+          <div class="sc-row"><kbd>?</kbd><span>快捷键帮助</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- 标签页弹窗                     -->
+  <!-- ============================== -->
+  <div id="demo-tab">
+    <div class="sc-backdrop" id="tab-backdrop"></div>
+    <div class="tab-panel">
+      <div class="tab-header">
+        <div class="tab-header-left">
+          <span class="tab-dot" style="color:#E74C3C;">●</span>
+          <input type="text" class="tab-title-input" value="人工智能" />
+          <span class="tab-badge">Lv.1</span>
+          <span class="tab-id-label">#a1b2c3d4</span>
+        </div>
+        <div class="tab-header-right">
+          <button class="btn-primary" style="padding:5px 14px;font-size:10px;">💾 保存</button>
+          <button class="tab-tool-btn" id="tab-close-btn" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--glass-border);">✕</button>
+        </div>
+      </div>
+
+      <div class="tab-toolbar">
+        <select class="tab-tool-select">
+          <option>普通</option><option>小</option><option selected>大</option>
+        </select>
+        <span class="tab-tool-sep"></span>
+        <button class="tab-tool-btn"><b>B</b></button>
+        <button class="tab-tool-btn"><i>I</i></button>
+        <button class="tab-tool-btn"><u>U</u></button>
+        <button class="tab-tool-btn"><s>S</s></button>
+        <span class="tab-tool-sep"></span>
+        <button class="tab-tool-btn">🖍️</button>
+        <button class="tab-tool-btn">🎨</button>
+        <span class="tab-tool-sep"></span>
+        <button class="tab-tool-btn">≡</button>
+        <button class="tab-tool-btn" style="opacity:0.5;">≡</button>
+        <button class="tab-tool-btn">≡</button>
+        <span class="tab-tool-sep"></span>
+        <button class="tab-tool-btn">•</button>
+        <button class="tab-tool-btn">1.</button>
+      </div>
+
+      <div class="tab-editor-area" contenteditable="true">
+        <h2>人工智能</h2>
+        <p>人工智能（Artificial Intelligence），简称 AI，是计算机科学的一个分支，旨在创建能够模拟人类智能的系统。</p>
+        <p>它涵盖了机器学习、自然语言处理、计算机视觉等多个子领域。</p>
+        <blockquote>“人工智能将是人类历史上最深刻的事件之一。” — 吴恩达</blockquote>
+        <p>主要研究方向包括：</p>
+        <ul>
+          <li>机器学习与深度学习</li>
+          <li>自然语言处理</li>
+          <li>计算机视觉</li>
+          <li>强化学习</li>
+        </ul>
+      </div>
+
+      <div class="tab-footer-bar">
+        <span>字数: 128</span>
+        <span>点击「保存」或 Ctrl+S 保存</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- 底部演示说明                   -->
+  <!-- ============================== -->
+  <div id="demo-instruction">
+    🎯 <b>UI 美化设计演示</b> ·
+    点击 <button id="demo-toggle-data">加载示例图谱</button>
+    切换空状态/有数据 ·
+    点击 <button id="demo-theme-btn2">🌙 切换主题</button>
+    查看日间模式 ·
+    点击 <button id="demo-sc-btn2">⌨️ 快捷键</button>
+    查看帮助面板
+  </div>
+
+  <!-- ============================== -->
+  <!-- JavaScript                     -->
+  <!-- ============================== -->
+  <script>
+    (function() {
+      // ---- 主题切换 ----
+      var root = document.documentElement;
+      var themeBtns = [
+        document.getElementById('demo-theme-btn'),
+        document.getElementById('demo-theme-btn2')
+      ];
+
+      function toggleTheme() {
+        var isDay = root.classList.toggle('theme-day');
+        var icon = isDay ? '☀️' : '🌙';
+        themeBtns.forEach(function(b) { if(b) b.textContent = icon; });
+      }
+
+      themeBtns.forEach(function(b) {
+        if(b) b.addEventListener('click', toggleTheme);
+      });
+
+      // ---- 示例图谱切换 ----
+      var toggleBtn = document.getElementById('demo-toggle-data');
+      var emptyEl = document.getElementById('demo-empty');
+      var graphEl = document.getElementById('demo-graph-content');
+      var panelEmpty = document.getElementById('panel-empty-demo');
+      var panelNode = document.getElementById('panel-node-demo');
+      var hasData = false;
+
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+          hasData = !hasData;
+          if (hasData) {
+            emptyEl.classList.add('hidden');
+            graphEl.classList.remove('hidden');
+            panelEmpty.classList.add('hidden');
+            panelNode.classList.remove('hidden');
+            toggleBtn.textContent = '清空图谱';
+          } else {
+            emptyEl.classList.remove('hidden');
+            graphEl.classList.add('hidden');
+            panelEmpty.classList.remove('hidden');
+            panelNode.classList.add('hidden');
+            toggleBtn.textContent = '加载示例图谱';
+          }
+        });
+      }
+
+      // ---- 快捷键面板 ----
+      var scPanel = document.getElementById('demo-shortcuts');
+      var scBtns = [
+        document.getElementById('demo-sc-btn'),
+        document.getElementById('demo-sc-btn2')
+      ];
+
+      function openSC() { scPanel.classList.add('open'); }
+      function closeSC() { scPanel.classList.remove('open'); }
+
+      scBtns.forEach(function(b) {
+        if(b) b.addEventListener('click', openSC);
+      });
+
+      document.getElementById('sc-backdrop').addEventListener('click', function(e) {
+        if (e.target === document.getElementById('sc-backdrop')) closeSC();
+      });
+      document.getElementById('sc-close-btn').addEventListener('click', closeSC);
+
+      // ---- 标签页 ----
+      var tabPanel = document.getElementById('demo-tab');
+      var tabOpenBtn = document.getElementById('demo-open-tab');
+
+      function openTab() { tabPanel.classList.add('open'); }
+      function closeTab() { tabPanel.classList.remove('open'); }
+
+      if (tabOpenBtn) tabOpenBtn.addEventListener('click', openTab);
+      document.getElementById('tab-backdrop').addEventListener('click', function(e) {
+        if (e.target === document.getElementById('tab-backdrop')) closeTab();
+      });
+      document.getElementById('tab-close-btn').addEventListener('click', closeTab);
+
+      // ---- Esc 关闭 ----
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          if (tabPanel.classList.contains('open')) closeTab();
+          else if (scPanel.classList.contains('open')) closeSC();
+        }
+        if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+          var tag = e.target.tagName;
+          if (tag !== 'INPUT' && tag !== 'TEXTAREA' && e.target.contentEditable !== 'true') {
+            e.preventDefault();
+            if (scPanel.classList.contains('open')) closeSC();
+            else openSC();
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
