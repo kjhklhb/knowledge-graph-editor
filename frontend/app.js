@@ -63,7 +63,7 @@ function initNet() { console.log("[INIT] initNet() start");
   state.network.on('doubleClick', function(p) { if(p.nodes.length) openTab(p.nodes[0]); });
   ct.addEventListener('click', function(e) { if((e.target===ct||e.target.id==='graph-vis')&&!state.addingEdge.active) clrSel(); });
   state.network.once('stabilizationIterationsDone', function() { sm('\u5c31\u7eea'); });
-  state.network.on('viewChanged', function() { updateDispHandle(); });
+  state.network.on('viewChanged', function() { updateDpLines(); });
   // 拖拽结束自动置顶（save+restore 位置避免回弹）
   state.network.on('dragEnd', function(params) {
     if (params.nodes && params.nodes.length) {
@@ -104,7 +104,7 @@ function hClick(p) { console.log("[CLICK] hClick() nodes="+(p?p.nodes?p.nodes.le
   }
   if(nodes.length) {
     var nd = state.nodes.get(nodes[0]);
-    if (nd && nd.properties && nd.properties._type === 'display') showDisplayPanel(nodes[0]);
+    if (nd && nd.properties && nd.properties._type === 'display') openDpPanel(nodes[0]);
     else showNodePanel(nodes[0]);
   }
   else if(edges.length) showEdgePanel(edges[0]);
@@ -154,19 +154,10 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
     var props = n.properties||{};
     var isDisp = props._type === 'display';
     if (isDisp) {
-      var dw = Math.max(200, parseInt(props._dispW) || 280);
-      var dh = Math.max(120, parseInt(props._dispH) || 180);
       return {
-        id: n.id, label: '', // label will be set after edges loaded
-        color: { background: cv('--bg-surface'), border: '#7C7E8C', highlight: { background: cv('--bg-surface'), border: '#9EA0B0' } },
-        shape: 'box', borderRadius: 12,
-        widthConstraint: dw,
-        margin: { top: Math.max(30, (dh - 30) / 2), right: 14, bottom: Math.max(30, (dh - 30) / 2), left: 14 },
-        font: { size: 12, color: cv('--text-secondary'), face: 'Segoe UI, PingFang SC, sans-serif', multi: 'html' },
-        borderWidth: 2, borderWidthSelected: 3,
-        physics: false, hidden: false,
-        shadow: { enabled: true, size: 8, x: 0, y: 2 },
-        title: n.label,
+        id: n.id, label: '', size: 1,
+        color: { background: 'transparent', border: 'transparent', highlight: { background: 'transparent', border: 'transparent' } },
+        shape: 'dot', physics: false, hidden: true,
         properties: props
       };
     }
@@ -174,25 +165,12 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
       color: Cc(n.color||'#00E8C6'), size: ns(n.level||1),
       title: tp(n), properties: props, shadow: {enabled:true} };
   });
-  var ea = (d.edges||[]).map(function(e) {
-    // 显示节点相关的边不加物理
-    var eProps = e.properties||{};
-    var isDispEdge = eProps._dispEdge === true;
+  var ea = (d.edges||[]).filter(function(e) { return !(e.properties && e.properties._dispEdge); }).map(function(e) {
     return { id: e.id, from: e.from, to: e.to, label: e.label||'',
-      color: isDispEdge ? { color: 'rgba(0,232,198,0.25)', highlight: '#00e8c6' } : Ce(e.color||'#6B7280'),
-      width: isDispEdge ? 1.5 : 2,
-      dashes: isDispEdge ? [4,4] : false,
-      physics: isDispEdge ? false : true,
-      title: isDispEdge ? '显示连接' : tp(e), properties: eProps };
+      color: Ce(e.color||'#6B7280'), width: 2, title: tp(e), properties: e.properties||{} };
   });
   state.nodes.clear(); state.edges.clear();
   state.nodes.add(na); state.edges.add(ea);
-  // 更新显示节点 label（依赖边已加载）
-  state.nodes.forEach(function(n) {
-    if (n.properties && n.properties._type === 'display') {
-      state.nodes.update({ id: n.id, label: buildDisplayLabel(n.id, n.properties._label || n.title || '') });
-    }
-  });
   st(); eh(na.length===0);
   sm('\u5df2\u52a0\u8f7d ' + na.length + ' \u8282\u70b9, ' + ea.length + ' \u8fb9');
 }
@@ -336,7 +314,7 @@ function clrSel() { console.log("[UI] clrSel()");
   state.selectedType = null; state.selectedId = null;
   state.network.setSelection({ nodes: [], edges: [] });
   hAP(); document.getElementById('panel-empty').classList.remove('hidden');
-  document.getElementById('disp-resize-handle').style.display = 'none';
+  if (!document.getElementById('display-panel').classList.contains('hidden')) closeDpPanel();
 }
 
 // ===== File Operations =====
@@ -572,81 +550,93 @@ document.getElementById('kc-resize-handle').addEventListener('dblclick', functio
 // Close
 document.getElementById('kc-close').addEventListener('click', closeKnowledgeCard);
 
-// ===== Display Node (显示节点) =====
+// ===== Display Node (显示节点 — HTML 浮层) =====
 
 function isDisplayNode(nd) {
   return nd && nd.properties && nd.properties._type === 'display';
 }
 
-function buildDisplayLabel(nodeId, label) {
-  var related = getRelatedNodes(nodeId);
-  var html = '<div style="font-weight:500;font-size:13px;padding:6px 8px 4px 8px;text-align:center;letter-spacing:0.5px;color:var(--text-primary);">';
-  html += '\u{1F4FA} ' + (label || '\u663e\u793a\u533a') + '</div>';
-  html += '<div style="border-top:1px solid rgba(255,255,255,0.06);margin:0 8px 4px 8px;"></div>';
-  if (related.length) {
-    for (var i = 0; i < related.length; i++) {
-      var r = related[i];
-      if (isDisplayNode(r)) continue;
-      var rc = typeof r.color === 'object' ? r.color.background : (r.color || '#00E8C6');
-      html += '<div style="font-size:11px;padding:2px 10px;opacity:0.8;white-space:nowrap;display:flex;align-items:center;gap:5px;">';
-      html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + rc + ';flex-shrink:0;"></span>';
-      html += '<span style="overflow:hidden;text-overflow:ellipsis;">' + (r.label || '?') + '</span></div>';
-    }
-  } else {
-    html += '<div style="font-size:10px;opacity:0.35;text-align:center;padding:6px 0;">\u6682\u65e0\u5173\u8054</div>';
+// ----- SVG 连线：浮层 → 关联节点 -----
+var dpLineSvg = null;
+
+function removeDpLines() {
+  if (dpLineSvg) { dpLineSvg.remove(); dpLineSvg = null; }
+}
+
+function updateDpLines() {
+  if (!dpLineSvg || !state.network || !state.kcNodeId) return;
+  var panel = document.getElementById('display-panel');
+  if (panel.classList.contains('hidden')) return;
+  var ct = document.getElementById('graph-container');
+  var ctRect = ct.getBoundingClientRect();
+  var panelRect = panel.getBoundingClientRect();
+  // 连接点：浮层右侧垂直中点
+  var cx = panelRect.right - ctRect.left;
+  var cy = panelRect.top - ctRect.top + panelRect.height / 2;
+
+  var related = getRelatedNodes(state.kcNodeId);
+  var ids = [state.kcNodeId];
+  for (var i = 0; i < related.length; i++) ids.push(related[i].id);
+  var positions = state.network.getPositions(ids);
+  var lines = dpLineSvg.querySelectorAll('.dp-line');
+
+  for (var i = 0; i < lines.length; i++) {
+    var nid = ids[i];
+    if (!nid || !positions || !positions[nid]) continue;
+    var dom = state.network.canvasToDOM(positions[nid]);
+    if (!dom) continue;
+    lines[i].setAttribute('x1', cx);
+    lines[i].setAttribute('y1', cy);
+    lines[i].setAttribute('x2', dom.x);
+    lines[i].setAttribute('y2', dom.y);
   }
-  return html;
 }
 
-function calcDisplaySize(nodeId) {
-  // 基于关联知识节点等级计算推荐尺寸
+function createDpLines(nodeId) {
+  removeDpLines();
+  var ct = document.getElementById('graph-container');
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:490;overflow:visible;';
+  ct.appendChild(svg);
+  dpLineSvg = svg;
+
+  var ids = [nodeId];
   var related = getRelatedNodes(nodeId);
-  var maxLv = 1, count = related.length;
-  for (var i = 0; i < related.length; i++) {
-    if (!isDisplayNode(related[i])) {
-      maxLv = Math.max(maxLv, related[i].level || 1);
-    }
+  for (var i = 0; i < related.length; i++) ids.push(related[i].id);
+
+  for (var i = 0; i < ids.length; i++) {
+    var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('class', 'dp-line');
+    line.setAttribute('stroke', '#7C7E8C');
+    line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('stroke-dasharray', '5,4');
+    line.setAttribute('opacity', '0.35');
+    svg.appendChild(line);
   }
-  return {
-    w: Math.max(240, 280 + maxLv * 6 + count * 4),
-    h: Math.max(160, 180 + maxLv * 6 + count * 8)
-  };
+  updateDpLines();
+  if (state.network) {
+    state.network.on('viewChanged', updateDpLines);
+    state.network.on('dragEnd', updateDpLines);
+  }
 }
 
-// 更新 vis-network 中显示节点的渲染尺寸
-function updateDisplayNodeVis(nodeId) {
-  if (!state.nodes || !nodeId) return;
-  var nd = state.nodes.get(nodeId);
-  if (!nd || !isDisplayNode(nd)) return;
-  var props = nd.properties || {};
-  var dw = Math.max(200, parseInt(props._dispW) || 280);
-  var dh = Math.max(120, parseInt(props._dispH) || 180);
-  state.nodes.update({
-    id: nodeId,
-    widthConstraint: dw,
-    margin: { top: Math.max(30, (dh - 30) / 2), right: 14, bottom: Math.max(30, (dh - 30) / 2), left: 14 }
-  });
-}
-
-// 更新画布上的调整手柄位置
-function updateDispHandle() {
-  var handle = document.getElementById('disp-resize-handle');
-  if (!state.kcNodeId || !state.network || handle.style.display === 'none') return;
-  // 如果不是显示节点，隐藏手柄
-  var nd = state.nodes.get(state.kcNodeId);
-  if (!nd || !isDisplayNode(nd)) { handle.style.display = 'none'; return; }
+// ----- 浮层位置（同步 vis-network 节点坐标）-----
+function syncDpPos() {
+  if (!state.network || !state.kcNodeId) return;
   try {
-    var bb = state.network.getBoundingBox(state.kcNodeId);
-    var tl = state.network.canvasToDOM({ x: bb.left, y: bb.top });
-    var br = state.network.canvasToDOM({ x: bb.right, y: bb.bottom });
-    if (tl && br) {
-      handle.style.left = (br.x - 7) + 'px';
-      handle.style.top = (br.y - 7) + 'px';
-    }
+    var pos = state.network.getPosition(state.kcNodeId);
+    if (!pos) return;
+    var dom = state.network.canvasToDOM(pos);
+    if (!dom) return;
+    var panel = document.getElementById('display-panel');
+    panel.style.left = (dom.x - 280) + 'px';
+    panel.style.top = (dom.y - 90) + 'px';
+    panel.style.width = '280px';
+    updateDpLines();
   } catch(e) {}
 }
 
-// 创建显示节点
+// ----- 创建显示节点 -----
 async function addDisplayNode() {
   if (!state.nodes || !state.network) { sm('图谱未就绪'); return; }
   var sel = state.network.getSelectedNodes();
@@ -657,176 +647,151 @@ async function addDisplayNode() {
   }
   try {
     var props = { _type: 'display', _dispW: 280, _dispH: 180, _label: '\u663e\u793a\u533a' };
-    var r = await ca('add_node', { label: '\u663e\u793a\u533a', color: '#00E8C6', level: 1, properties: props });
-    // 在 vis-network 中创建（label 稍后更新）
+    var r = await ca('add_node', { label: '\u663e\u793a\u533a', color: '#7C7E8C', level: 1, properties: props });
+    // vis-network 中：极小不可见节点（仅用于连线锚点）
     state.nodes.add({
-      id: r.id, label: '',
-      color: { background: cv('--bg-surface'), border: '#7C7E8C', highlight: { background: cv('--bg-surface'), border: '#9EA0B0' } },
-      shape: 'box', borderRadius: 12,
-      widthConstraint: 280,
-      margin: { top: 75, right: 14, bottom: 75, left: 14 },
-      font: { size: 12, color: cv('--text-secondary'), face: 'Segoe UI, PingFang SC, sans-serif', multi: 'html' },
-      borderWidth: 2, borderWidthSelected: 3,
-      physics: false,
-      shadow: { enabled: true, size: 8, x: 0, y: 2 },
-      title: '\u663e\u793a\u533a',
+      id: r.id, label: '', size: 1,
+      color: { background: 'transparent', border: 'transparent', highlight: { background: 'transparent', border: 'transparent' } },
+      shape: 'dot', physics: false,
+      hidden: true,
       properties: props
     });
-    // 连接选中的知识节点到显示节点
+    // 后端添加边（前端不渲染 vis-network 边，用 SVG）
     for (var i = 0; i < selNormal.length; i++) {
-      var er = await ca('add_edge', { from: selNormal[i], to: r.id, label: '\u663e\u793a', color: '#00E8C6', properties: { _dispEdge: true } });
-      state.edges.add({
-        id: er.id, from: er.from, to: er.to, label: '\u663e\u793a',
-        color: { color: 'rgba(0,232,198,0.25)', highlight: '#00e8c6' },
-        width: 1.5, dashes: [4,4], physics: false,
-        title: '\u663e\u793a\u8fde\u63a5', properties: { _dispEdge: true }
-      });
+      await ca('add_edge', { from: selNormal[i], to: r.id, label: '\u663e\u793a', color: '#7C7E8C', properties: { _dispEdge: true } });
     }
-    // 按选中节点等级调整尺寸
-    if (selNormal.length) {
-      var sz = calcDisplaySize(r.id);
-      var updProps = { _type: 'display', _dispW: sz.w, _dispH: sz.h, _label: '\u663e\u793a\u533a' };
-      await ca('update_node', { node_id: r.id, properties: updProps });
-      state.nodes.update({
-        id: r.id, properties: updProps,
-        widthConstraint: sz.w,
-        margin: { top: Math.max(30, (sz.h - 30) / 2), right: 14, bottom: Math.max(30, (sz.h - 30) / 2), left: 14 }
-      });
-    }
-    // 更新 label 显示关联节点
-    state.nodes.update({ id: r.id, label: buildDisplayLabel(r.id, '\u663e\u793a\u533a') });
     eh(false); st(); sm('\u2705 \u663e\u793a\u8282\u70b9\u5df2\u521b\u5efa');
-    state.network.selectNodes([r.id]);
-    showDisplayPanel(r.id);
+    state.kcNodeId = r.id;
+    openDpPanel(r.id);
   } catch(e) { sm('\u274c \u5931\u8d25: ' + e.message); }
 }
 
-// 显示显示节点面板
-function showDisplayPanel(id) {
+// ----- 打开浮层 -----
+function openDpPanel(nodeId) {
   if (!state.nodes) return;
-  var nd = state.nodes.get(id); if (!nd) return;
+  var nd = state.nodes.get(nodeId);
+  if (!nd || !isDisplayNode(nd)) return;
   var props = nd.properties || {};
-  state.selectedType = 'display'; state.selectedId = id;
-  state.kcNodeId = id;
-  hAP();
-  document.getElementById('panel-display').classList.remove('hidden');
-  document.getElementById('edit-display-label').value = nd.label || '\u663e\u793a\u533a';
-  document.getElementById('edit-display-width').textContent = props._dispW || 280;
-  document.getElementById('edit-display-height').textContent = props._dispH || 180;
+  state.kcNodeId = nodeId;
+
+  // 填充标题
+  document.getElementById('dp-title').textContent = props._label || '\u663e\u793a\u533a';
 
   // 关联节点列表
-  var related = getRelatedNodes(id);
-  var list = document.getElementById('display-connected-list');
+  var related = getRelatedNodes(nodeId);
+  var list = document.getElementById('dp-related-list');
   list.innerHTML = '';
   if (related.length === 0) {
-    list.innerHTML = '<span class=\"kc-related-chip-empty\">暂无关联节点</span>';
+    list.innerHTML = '<span class=\"kc-related-chip-empty\">\u6682\u65e0\u5173\u8054</span>';
   } else {
     for (var i = 0; i < related.length; i++) {
       var r = related[i];
       if (isDisplayNode(r)) continue;
       var rc = typeof r.color === 'object' ? r.color.background : (r.color || '#00E8C6');
       var chip = document.createElement('span');
-      chip.className = 'display-connected-chip';
+      chip.className = 'kc-related-chip';
       chip.innerHTML = '<span class=\"kc-related-chip-dot\" style=\"background:' + rc + '\"></span>' + (r.label || '\u672a\u547d\u540d');
+      (function(id) { chip.addEventListener('click', function(e) { e.stopPropagation(); showNodePanel(id); }); })(r.id);
       list.appendChild(chip);
     }
   }
 
-  // 显示调整手柄（延迟等待 vis-network 渲染完成）
-  var handle = document.getElementById('disp-resize-handle');
-  handle.style.display = 'block';
-  setTimeout(function() { updateDispHandle(); setTimeout(updateDispHandle, 300); }, 100);
+  // 内容：列出关联节点名称 + 内容预览
+  var contentEl = document.getElementById('dp-content');
+  var html = '';
+  if (related.length) {
+    for (var i = 0; i < related.length; i++) {
+      var r = related[i];
+      if (isDisplayNode(r)) continue;
+      var rc = typeof r.color === 'object' ? r.color.background : (r.color || '#00E8C6');
+      html += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;">';
+      html += '<span style="width:7px;height:7px;border-radius:50%;background:' + rc + ';flex-shrink:0;"></span>';
+      html += '<span style="font-weight:400;">' + (r.label || '?') + '</span></div>';
+      if (r.content) {
+        var preview = r.content.replace(/<[^>]+>/g, '').substring(0, 80);
+        if (preview) html += '<div style="font-size:11px;opacity:0.5;padding:0 0 4px 13px;">' + preview + '...</div>';
+      }
+    }
+  } else {
+    html = '<p style="opacity:0.35;font-style:italic;">\u6682\u65e0\u5173\u8054\u8282\u70b9</p>';
+  }
+  contentEl.innerHTML = html;
+
+  // 显示浮层
+  var panel = document.getElementById('display-panel');
+  panel.classList.remove('hidden');
+  syncDpPos();
+  setTimeout(syncDpPos, 200);
+  createDpLines(nodeId);
+  sm('\u2705 \u663e\u793a\u8282\u70b9\u5df2\u6253\u5f00');
 }
 
-// 保存显示节点
-async function saveDisplayNode() {
-  var id = state.selectedId;
-  if (!id || state.selectedType !== 'display') return;
-  var label = document.getElementById('edit-display-label').value.trim() || '\u663e\u793a\u533a';
-  var dw = parseInt(document.getElementById('edit-display-width').textContent) || 280;
-  var dh = parseInt(document.getElementById('edit-display-height').textContent) || 180;
-  dw = Math.max(200, Math.min(800, dw));
-  dh = Math.max(120, Math.min(600, dh));
-  var props = { _type: 'display', _dispW: dw, _dispH: dh, _label: label };
-  try {
-    sm('\u4fdd\u5b58\u4e2d...');
-    await ca('update_node', { node_id: id, label: label, properties: props });
-    state.nodes.update({
-      id: id, label: buildDisplayLabel(id, label), properties: props,
-      widthConstraint: dw,
-      margin: { top: Math.max(30, (dh - 30) / 2), right: 14, bottom: Math.max(30, (dh - 30) / 2), left: 14 }
-    });
-    updateDispHandle();
-    setTimeout(updateDispHandle, 200);
-    sm('\u2705 \u663e\u793a\u8282\u70b9\u5df2\u4fdd\u5b58');
-  } catch(e) { sm('\u274c \u5931\u8d25: ' + e.message); }
+function closeDpPanel() {
+  document.getElementById('display-panel').classList.add('hidden');
+  removeDpLines();
+  state.kcNodeId = null;
 }
 
-// 画布调整手柄拖拽
-var dispResizeData = null;
+// 浮层关闭按钮
+document.getElementById('dp-close').addEventListener('click', closeDpPanel);
 
-document.getElementById('disp-resize-handle').addEventListener('mousedown', function(e) {
-  if (!state.kcNodeId) return;
-  var nd = state.nodes.get(state.kcNodeId);
-  if (!nd || !isDisplayNode(nd)) return;
-  e.preventDefault();
-  e.stopPropagation();
-  var props = nd.properties || {};
-  dispResizeData = {
-    nodeId: state.kcNodeId,
-    startX: e.clientX, startY: e.clientY,
-    startW: parseInt(props._dispW) || 280,
-    startH: parseInt(props._dispH) || 180
+// ----- 浮层拖拽（同步移动 vis-network 锚点）-----
+var dpDragData = null;
+
+document.getElementById('dp-header').addEventListener('mousedown', function(e) {
+  if (e.target.closest('.kc-close-btn')) return;
+  var panel = document.getElementById('display-panel');
+  dpDragData = {
+    offsetX: e.clientX - panel.offsetLeft,
+    offsetY: e.clientY - panel.offsetTop
   };
 });
 
 document.addEventListener('mousemove', function(e) {
-  if (!dispResizeData) return;
-  var dw = e.clientX - dispResizeData.startX;
-  var dh = e.clientY - dispResizeData.startY;
-  var nw = Math.max(200, Math.min(800, dispResizeData.startW + dw));
-  var nh = Math.max(120, Math.min(600, dispResizeData.startH + dh));
-  // 实时更新画布上的节点
-  state.nodes.update({ id: dispResizeData.nodeId, widthConstraint: nw });
-  // 同步面板数值
-  document.getElementById('edit-display-width').textContent = nw;
-  document.getElementById('edit-display-height').textContent = nh;
-  updateDispHandle();
-});
-
-document.addEventListener('mouseup', function() {
-  if (dispResizeData) {
-    // 持久化到后端
-    var nw = parseInt(document.getElementById('edit-display-width').textContent) || 280;
-    var nh = parseInt(document.getElementById('edit-display-height').textContent) || 180;
-    var props = { _type: 'display', _dispW: nw, _dispH: nh };
-    ca('update_node', { node_id: dispResizeData.nodeId, properties: props }).catch(function() {});
-    state.nodes.update({ id: dispResizeData.nodeId, properties: props });
+  if (!dpDragData) return;
+  var panel = document.getElementById('display-panel');
+  var ct = document.getElementById('graph-container');
+  var crect = ct.getBoundingClientRect();
+  var nx = Math.max(0, e.clientX - dpDragData.offsetX);
+  var ny = Math.max(0, e.clientY - dpDragData.offsetY);
+  panel.style.left = nx + 'px';
+  panel.style.top = ny + 'px';
+  // 同步 vis-network 锚点位置
+  if (state.kcNodeId && state.network) {
+    try {
+      var dom = state.network.DOMtoCanvas({ x: nx + 280, y: ny + 90 });
+      state.network.moveNode(state.kcNodeId, dom.x, dom.y);
+    } catch(e) {}
   }
-  dispResizeData = null;
+  updateDpLines();
 });
 
-// 面板宽度/高度 +/− 按钮
-document.getElementById('disp-w-down').addEventListener('click', function() {
-  var el = document.getElementById('edit-display-width');
-  var v = Math.max(200, (parseInt(el.textContent) || 280) - 20);
-  el.textContent = v;
+document.addEventListener('mouseup', function() { dpDragData = null; });
+document.addEventListener('mouseleave', function() { dpDragData = null; });
+
+// ----- 浮层调整大小 -----
+var dpResizeData = null;
+
+document.getElementById('dp-resize-handle').addEventListener('mousedown', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  var panel = document.getElementById('display-panel');
+  dpResizeData = {
+    startX: e.clientX, startY: e.clientY,
+    startW: panel.offsetWidth, startH: panel.offsetHeight
+  };
 });
-document.getElementById('disp-w-up').addEventListener('click', function() {
-  var el = document.getElementById('edit-display-width');
-  var v = Math.min(800, (parseInt(el.textContent) || 280) + 20);
-  el.textContent = v;
+
+document.addEventListener('mousemove', function(e) {
+  if (!dpResizeData) return;
+  var panel = document.getElementById('display-panel');
+  var nw = Math.max(220, dpResizeData.startW + (e.clientX - dpResizeData.startX));
+  var nh = Math.max(120, dpResizeData.startH + (e.clientY - dpResizeData.startY));
+  panel.style.width = nw + 'px';
+  panel.style.height = nh + 'px';
 });
-document.getElementById('disp-h-down').addEventListener('click', function() {
-  var el = document.getElementById('edit-display-height');
-  var v = Math.max(120, (parseInt(el.textContent) || 180) - 20);
-  el.textContent = v;
-});
-document.getElementById('disp-h-up').addEventListener('click', function() {
-  var el = document.getElementById('edit-display-height');
-  var v = Math.min(600, (parseInt(el.textContent) || 180) + 20);
-  el.textContent = v;
-});
+
+document.addEventListener('mouseup', function() { dpResizeData = null; });
 
 // ===== Level Up/Down =====
 document.getElementById('level-down').addEventListener('click', function() {
@@ -872,7 +837,7 @@ document.addEventListener('keydown', function(e) {
     if(e.key==='l'||e.key==='L') { e.preventDefault(); tidyLayout(); return; }
     if(e.key==='k'||e.key==='K') { e.preventDefault(); if(state.selectedId) showKnowledgeCard(state.selectedId); return; }
     if(e.key==='Delete'||e.key==='Backspace') { e.preventDefault(); deleteSelected(); return; }
-    if(e.key==='Escape') { e.preventDefault(); if(state.addingEdge.active) cancelAddEdge(); else { if(!document.getElementById('node-tab-overlay').classList.contains('hidden')) closeTab(); if(!document.getElementById('knowledge-card').classList.contains('hidden')) closeKnowledgeCard(); clrSel(); } return; }
+    if(e.key==='Escape') { e.preventDefault(); if(state.addingEdge.active) cancelAddEdge(); else { if(!document.getElementById('node-tab-overlay').classList.contains('hidden')) closeTab(); if(!document.getElementById('knowledge-card').classList.contains('hidden')) closeKnowledgeCard(); if(!document.getElementById('display-panel').classList.contains('hidden')) closeDpPanel(); clrSel(); } return; }
     if(e.key==='?') { e.preventDefault(); document.getElementById('shortcuts-overlay').classList.toggle('hidden'); return; }
     if(e.key==='1') { e.preventDefault(); applyLayout('force'); document.getElementById('layout-select').value='force'; return; }
     if(e.key==='2') { e.preventDefault(); applyLayout('hierarchical'); document.getElementById('layout-select').value='hierarchical'; return; }
