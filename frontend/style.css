@@ -937,61 +937,6 @@ body::after {
 }
 
 
-/* 显示节点面板 */
-.display-connected-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  padding: 6px 0;
-  min-height: 30px;
-}
-
-.display-connected-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-pill);
-  background: var(--bg-surface);
-  font-size: 11px;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-
-.display-connected-chip .kc-related-chip-dot {
-  width: 7px;
-  height: 7px;
-}
-
-/* 画布上的显示节点调整手柄 */
-#disp-resize-handle {
-  position: absolute;
-  z-index: 495;
-  width: 14px;
-  height: 14px;
-  cursor: nwse-resize;
-  pointer-events: auto;
-  display: none;
-}
-
-#disp-resize-handle::after {
-  content: '';
-  position: absolute;
-  right: 2px;
-  bottom: 2px;
-  width: 10px;
-  height: 10px;
-  border-right: 2.5px solid var(--accent);
-  border-bottom: 2.5px solid var(--accent);
-  opacity: 0.7;
-  border-radius: 1px;
-}
-
-#disp-resize-handle:hover::after {
-  opacity: 1;
-}
-
 /* 显示浮层面板（复用 KC 大部分样式，仅差异化部分） */
 .dp-panel {
   position: absolute;

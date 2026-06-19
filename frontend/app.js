@@ -877,7 +877,7 @@ document.getElementById('btn-tidy-layout').addEventListener('click', tidyLayout)
 document.getElementById('layout-select').addEventListener('change', function(e) { applyLayout(e.target.value); });
 document.getElementById('btn-save-node').addEventListener('click', saveNode);
 document.getElementById('btn-save-edge').addEventListener('click', saveEdge);
-document.getElementById('btn-save-display') && document.getElementById('btn-save-display').addEventListener('click', saveDisplayNode);
+
 document.getElementById('btn-confirm-edge').addEventListener('click', confirmAddEdge);
 document.getElementById('btn-cancel-edge').addEventListener('click', cancelAddEdge);
 document.getElementById('btn-open-tab') && document.getElementById('btn-open-tab').addEventListener('click', function() { if(state.selectedId) openTab(state.selectedId); });

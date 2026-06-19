@@ -52,7 +52,6 @@
         <div class="empty-text">图谱为空</div>
         <div class="empty-sub">「示例」加载数据 · 点击「节点」创建 · 按 ⌘ 查看快捷键</div>
       </div>
-      <div id="disp-resize-handle"></div>
     </div>
 
     <!-- ===== 右侧属性面板 ===== -->
@@ -176,45 +175,6 @@
         </div>
       </div>
 
-      <!-- 显示节点属性编辑 -->
-      <div id="panel-display" class="panel-section hidden">
-        <h3 class="panel-title">
-          <span class="panel-icon">📺</span> 显示节点
-          <span class="panel-id" id="display-panel-id"></span>
-        </h3>
-        <div class="panel-body">
-          <div class="form-group">
-            <label>标签</label>
-            <input type="text" id="edit-display-label" class="form-input" placeholder="显示区名称" />
-          </div>
-          <div class="form-row">
-            <div class="form-group flex-1">
-              <label>宽度</label>
-              <div class="level-selector">
-                <button class="level-btn" id="disp-w-down">−</button>
-                <span id="edit-display-width" class="level-value">280</span>
-                <button class="level-btn" id="disp-w-up">+</button>
-              </div>
-            </div>
-            <div class="form-group flex-1">
-              <label>高度</label>
-              <div class="level-selector">
-                <button class="level-btn" id="disp-h-down">−</button>
-                <span id="edit-display-height" class="level-value">180</span>
-                <button class="level-btn" id="disp-h-up">+</button>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>关联知识节点</label>
-            <div id="display-connected-list" class="display-connected-list">
-              <span class="kc-related-chip-empty">暂无关联节点</span>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-primary" id="btn-save-display">💾 保存</button>
-          </div>
-        </div>
       </div>
     </aside>
   </div>
