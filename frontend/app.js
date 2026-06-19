@@ -40,7 +40,7 @@ function sm(m){ console.log("[STATUS] "+m);document.getElementById("status-bar")
 function st(){document.getElementById("footer-stats").textContent="节点: "+state.nodes.length+" | 边: "+state.edges.length;}
 function eh(s){document.getElementById("empty-hint").classList.toggle("hidden",!s);}
 function tp(n){const p=n.properties||{};let t="<b>"+(n.label||"")+"</b>";if(Object.keys(p).length){t+="<hr>";for(const[k,v]of Object.entries(p))t+="<div>"+k+": "+v+"</div>";}return t;}
-function hAP(){["panel-empty","panel-node","panel-edge","panel-add-edge","panel-display"].forEach(function(id){document.getElementById(id).classList.add("hidden");});}
+function hAP(){["panel-empty","panel-node","panel-edge","panel-add-edge"].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add("hidden");});}
 function uLD(lv){for(var i=1;i<=5;i++){var d=document.getElementById("ld-"+i);if(d)d.classList.toggle("active",i<=lv);}}
 function cv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 
@@ -63,7 +63,7 @@ function initNet() { console.log("[INIT] initNet() start");
   state.network.on('doubleClick', function(p) { if(p.nodes.length) openTab(p.nodes[0]); });
   ct.addEventListener('click', function(e) { if((e.target===ct||e.target.id==='graph-vis')&&!state.addingEdge.active) clrSel(); });
   state.network.once('stabilizationIterationsDone', function() { sm('\u5c31\u7eea'); });
-  state.network.on('viewChanged', function() { updateDpLines(); });
+  state.network.on('viewChanged', function() { updateDpLines(); syncDpPos(); });
   // 拖拽结束自动置顶（save+restore 位置避免回弹）
   state.network.on('dragEnd', function(params) {
     if (params.nodes && params.nodes.length) {
@@ -155,9 +155,9 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
     var isDisp = props._type === 'display';
     if (isDisp) {
       return {
-        id: n.id, label: '', size: 1,
-        color: { background: 'transparent', border: 'transparent', highlight: { background: 'transparent', border: 'transparent' } },
-        shape: 'dot', physics: false, hidden: true,
+        id: n.id, label: '', size: 5,
+        color: { background: '#7C7E8C', border: '#5A5C6A', highlight: { background: '#9EA0B0', border: '#7C7E8C' } },
+        shape: 'dot', physics: false, hidden: false,
         properties: props
       };
     }
@@ -623,15 +623,17 @@ function createDpLines(nodeId) {
 // ----- 浮层位置（同步 vis-network 节点坐标）-----
 function syncDpPos() {
   if (!state.network || !state.kcNodeId) return;
+  var panel = document.getElementById('display-panel');
+  if (panel.classList.contains('hidden')) return;
   try {
     var pos = state.network.getPosition(state.kcNodeId);
     if (!pos) return;
     var dom = state.network.canvasToDOM(pos);
     if (!dom) return;
-    var panel = document.getElementById('display-panel');
-    panel.style.left = (dom.x - 280) + 'px';
-    panel.style.top = (dom.y - 90) + 'px';
-    panel.style.width = '280px';
+    var pw = panel.offsetWidth || 280;
+    var ph = panel.offsetHeight || 200;
+    panel.style.left = (dom.x - pw / 2) + 'px';
+    panel.style.top = (dom.y - ph / 2) + 'px';
     updateDpLines();
   } catch(e) {}
 }
@@ -650,9 +652,9 @@ async function addDisplayNode() {
     var r = await ca('add_node', { label: '\u663e\u793a\u533a', color: '#7C7E8C', level: 1, properties: props });
     // vis-network 中：极小不可见节点（仅用于连线锚点）
     state.nodes.add({
-      id: r.id, label: '', size: 1,
-      color: { background: 'transparent', border: 'transparent', highlight: { background: 'transparent', border: 'transparent' } },
-      shape: 'dot', physics: false,
+      id: r.id, label: '', size: 5,
+      color: { background: '#7C7E8C', border: '#5A5C6A', highlight: { background: '#9EA0B0', border: '#7C7E8C' } },
+      shape: 'dot', physics: false, hidden: false,
       hidden: true,
       properties: props
     });
@@ -759,7 +761,7 @@ document.addEventListener('mousemove', function(e) {
   // 同步 vis-network 锚点位置
   if (state.kcNodeId && state.network) {
     try {
-      var dom = state.network.DOMtoCanvas({ x: nx + 280, y: ny + 90 });
+      var dom = state.network.DOMtoCanvas({ x: nx + panel.offsetWidth / 2, y: ny + panel.offsetHeight / 2 });
       state.network.moveNode(state.kcNodeId, dom.x, dom.y);
     } catch(e) {}
   }
