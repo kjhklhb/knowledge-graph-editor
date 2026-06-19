@@ -63,7 +63,6 @@ function initNet() { console.log("[INIT] initNet() start");
   state.network.on('doubleClick', function(p) { if(p.nodes.length) openTab(p.nodes[0]); });
   ct.addEventListener('click', function(e) { if((e.target===ct||e.target.id==='graph-vis')&&!state.addingEdge.active) clrSel(); });
   state.network.once('stabilizationIterationsDone', function() { sm('\u5c31\u7eea'); });
-  state.network.on('viewChanged', function() { updateDpLines(); syncDpPos(); });
   // 拖拽结束自动置顶（save+restore 位置避免回弹）
   state.network.on('dragEnd', function(params) {
     if (params.nodes && params.nodes.length) {
@@ -154,10 +153,18 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
     var props = n.properties||{};
     var isDisp = props._type === 'display';
     if (isDisp) {
+      var dw = Math.max(200, parseInt(props._dispW) || 280);
+      var dh = Math.max(120, parseInt(props._dispH) || 180);
       return {
-        id: n.id, label: '', size: 5,
-        color: { background: '#7C7E8C', border: '#5A5C6A', highlight: { background: '#9EA0B0', border: '#7C7E8C' } },
-        shape: 'dot', physics: false, hidden: false,
+        id: n.id, label: '',
+        color: { background: cv('--bg-surface'), border: '#7C7E8C', highlight: { background: cv('--bg-surface'), border: '#9EA0B0' } },
+        shape: 'box', borderRadius: 12,
+        widthConstraint: dw,
+        margin: { top: Math.max(30, (dh - 30) / 2), right: 14, bottom: Math.max(30, (dh - 30) / 2), left: 14 },
+        font: { size: 12, color: cv('--text-secondary'), face: 'Segoe UI, PingFang SC, sans-serif', multi: 'html' },
+        borderWidth: 2, borderWidthSelected: 3,
+        physics: false, hidden: false,
+        shadow: { enabled: true, size: 8, x: 0, y: 2 },
         properties: props
       };
     }
@@ -165,12 +172,24 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
       color: Cc(n.color||'#00E8C6'), size: ns(n.level||1),
       title: tp(n), properties: props, shadow: {enabled:true} };
   });
-  var ea = (d.edges||[]).filter(function(e) { return !(e.properties && e.properties._dispEdge); }).map(function(e) {
-    return { id: e.id, from: e.from, to: e.to, label: e.label||'',
-      color: Ce(e.color||'#6B7280'), width: 2, title: tp(e), properties: e.properties||{} };
+  var ea = (d.edges||[]).map(function(e) {
+    var eProps = e.properties||{};
+    var isDisp = eProps._dispEdge === true;
+    return { id: e.id, from: e.from, to: e.to, label: isDisp ? '' : (e.label||''),
+      color: isDisp ? { color: 'rgba(124,126,140,0.3)', highlight: '#7C7E8C' } : Ce(e.color||'#6B7280'),
+      width: isDisp ? 1.5 : 2,
+      dashes: isDisp ? [5,4] : false,
+      physics: isDisp ? false : true,
+      properties: eProps };
   });
   state.nodes.clear(); state.edges.clear();
   state.nodes.add(na); state.edges.add(ea);
+  // 更新显示节点 label（依赖边已加载）
+  state.nodes.forEach(function(n) {
+    if (n.properties && n.properties._type === 'display') {
+      state.nodes.update({ id: n.id, label: buildDisplayLabel(n.id, n.properties._label || '') });
+    }
+  });
   st(); eh(na.length===0);
   sm('\u5df2\u52a0\u8f7d ' + na.length + ' \u8282\u70b9, ' + ea.length + ' \u8fb9');
 }
@@ -314,7 +333,6 @@ function clrSel() { console.log("[UI] clrSel()");
   state.selectedType = null; state.selectedId = null;
   state.network.setSelection({ nodes: [], edges: [] });
   hAP(); document.getElementById('panel-empty').classList.remove('hidden');
-  if (!document.getElementById('display-panel').classList.contains('hidden')) closeDpPanel();
 }
 
 // ===== File Operations =====
@@ -550,95 +568,61 @@ document.getElementById('kc-resize-handle').addEventListener('dblclick', functio
 // Close
 document.getElementById('kc-close').addEventListener('click', closeKnowledgeCard);
 
-// ===== Display Node (显示节点 — HTML 浮层) =====
+// ===== Display Node (box 渲染，浮层样式) =====
 
 function isDisplayNode(nd) {
   return nd && nd.properties && nd.properties._type === 'display';
 }
 
-// ----- SVG 连线：浮层 → 关联节点 -----
-var dpLineSvg = null;
-
-function removeDpLines() {
-  if (dpLineSvg) { dpLineSvg.remove(); dpLineSvg = null; }
-}
-
-function updateDpLines() {
-  if (!dpLineSvg || !state.network || !state.kcNodeId) return;
-  var panel = document.getElementById('display-panel');
-  if (panel.classList.contains('hidden')) return;
-  var ct = document.getElementById('graph-container');
-  var ctRect = ct.getBoundingClientRect();
-  var panelRect = panel.getBoundingClientRect();
-  // 连接点：浮层右侧垂直中点
-  var cx = panelRect.right - ctRect.left;
-  var cy = panelRect.top - ctRect.top + panelRect.height / 2;
-
-  var related = getRelatedNodes(state.kcNodeId);
-  var ids = [state.kcNodeId];
-  for (var i = 0; i < related.length; i++) ids.push(related[i].id);
-  var positions = state.network.getPositions(ids);
-  var lines = dpLineSvg.querySelectorAll('.dp-line');
-
-  for (var i = 0; i < lines.length; i++) {
-    var nid = ids[i];
-    if (!nid || !positions || !positions[nid]) continue;
-    var dom = state.network.canvasToDOM(positions[nid]);
-    if (!dom) continue;
-    lines[i].setAttribute('x1', cx);
-    lines[i].setAttribute('y1', cy);
-    lines[i].setAttribute('x2', dom.x);
-    lines[i].setAttribute('y2', dom.y);
-  }
-}
-
-function createDpLines(nodeId) {
-  removeDpLines();
-  var ct = document.getElementById('graph-container');
-  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:490;overflow:visible;';
-  ct.appendChild(svg);
-  dpLineSvg = svg;
-
-  var ids = [nodeId];
+function buildDisplayLabel(nodeId, label) {
   var related = getRelatedNodes(nodeId);
-  for (var i = 0; i < related.length; i++) ids.push(related[i].id);
-
-  for (var i = 0; i < ids.length; i++) {
-    var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('class', 'dp-line');
-    line.setAttribute('stroke', '#7C7E8C');
-    line.setAttribute('stroke-width', '1.5');
-    line.setAttribute('stroke-dasharray', '5,4');
-    line.setAttribute('opacity', '0.35');
-    svg.appendChild(line);
+  var bg = cv('--bg-surface');
+  var txt = cv('--text-primary');
+  var txt2 = cv('--text-secondary');
+  var html = '<div style="font-weight:500;font-size:13px;padding:4px 8px;text-align:center;color:' + txt + ';">\u{1F4FA} ' + (label || '\u663e\u793a\u533a') + '</div>';
+  html += '<div style="border-top:1px solid rgba(255,255,255,0.08);margin:0 8px 4px 8px;"></div>';
+  if (related.length) {
+    for (var i = 0; i < related.length; i++) {
+      var r = related[i];
+      if (isDisplayNode(r)) continue;
+      var rc = typeof r.color === 'object' ? r.color.background : (r.color || '#00E8C6');
+      html += '<div style="font-size:11px;padding:2px 10px;display:flex;align-items:center;gap:5px;color:' + txt2 + ';">';
+      html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + rc + ';flex-shrink:0;"></span>';
+      html += '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (r.label || '?') + '</span></div>';
+    }
+  } else {
+    html += '<div style="font-size:10px;text-align:center;padding:6px 0;color:rgba(255,255,255,0.3);">\u6682\u65e0\u5173\u8054</div>';
   }
-  updateDpLines();
-  if (state.network) {
-    state.network.on('viewChanged', updateDpLines);
-    state.network.on('dragEnd', updateDpLines);
-  }
+  return html;
 }
 
-// ----- 浮层位置（同步 vis-network 节点坐标）-----
-function syncDpPos() {
-  if (!state.network || !state.kcNodeId) return;
-  var panel = document.getElementById('display-panel');
-  if (panel.classList.contains('hidden')) return;
-  try {
-    var pos = state.network.getPosition(state.kcNodeId);
-    if (!pos) return;
-    var dom = state.network.canvasToDOM(pos);
-    if (!dom) return;
-    var pw = panel.offsetWidth || 280;
-    var ph = panel.offsetHeight || 200;
-    panel.style.left = (dom.x - pw / 2) + 'px';
-    panel.style.top = (dom.y - ph / 2) + 'px';
-    updateDpLines();
-  } catch(e) {}
+function showDisplayPanel(id) {
+  if (!state.nodes) return;
+  var nd = state.nodes.get(id); if (!nd) return;
+  var props = nd.properties || {};
+  state.selectedType = 'display'; state.selectedId = id;
+  hAP();
+  // 复用空面板展示简单信息
+  document.getElementById('panel-empty').classList.remove('hidden');
+  sm('\u663e\u793a\u8282\u70b9: ' + (nd.label || '\u663e\u793a\u533a') + ' | \u5927\u5c0f: ' + (props._dispW||280) + 'x' + (props._dispH||180));
 }
 
-// ----- 创建显示节点 -----
+// 更新 vis-network 中显示节点的渲染尺寸
+function updateDisplayNodeVis(nodeId, dw, dh) {
+  if (!state.nodes || !nodeId) return;
+  var nd = state.nodes.get(nodeId);
+  if (!nd || !isDisplayNode(nd)) return;
+  var props = nd.properties || {};
+  dw = dw || parseInt(props._dispW) || 280;
+  dh = dh || parseInt(props._dispH) || 180;
+  state.nodes.update({
+    id: nodeId,
+    widthConstraint: dw,
+    margin: { top: Math.max(30, (dh - 30) / 2), right: 14, bottom: Math.max(30, (dh - 30) / 2), left: 14 },
+    label: buildDisplayLabel(nodeId, props._label || nd.title || '')
+  });
+}
+
 async function addDisplayNode() {
   if (!state.nodes || !state.network) { sm('图谱未就绪'); return; }
   var sel = state.network.getSelectedNodes();
@@ -650,150 +634,36 @@ async function addDisplayNode() {
   try {
     var props = { _type: 'display', _dispW: 280, _dispH: 180, _label: '\u663e\u793a\u533a' };
     var r = await ca('add_node', { label: '\u663e\u793a\u533a', color: '#7C7E8C', level: 1, properties: props });
-    // vis-network 中：极小不可见节点（仅用于连线锚点）
+    // vis-network box 渲染（浮层样式）
     state.nodes.add({
-      id: r.id, label: '', size: 5,
-      color: { background: '#7C7E8C', border: '#5A5C6A', highlight: { background: '#9EA0B0', border: '#7C7E8C' } },
-      shape: 'dot', physics: false, hidden: false,
-      hidden: true,
+      id: r.id, label: '',
+      color: { background: cv('--bg-surface'), border: '#7C7E8C', highlight: { background: cv('--bg-surface'), border: '#9EA0B0' } },
+      shape: 'box', borderRadius: 12,
+      widthConstraint: 280,
+      margin: { top: 70, right: 14, bottom: 70, left: 14 },
+      font: { size: 12, color: cv('--text-secondary'), face: 'Segoe UI, PingFang SC, sans-serif', multi: 'html' },
+      borderWidth: 2, borderWidthSelected: 3,
+      physics: false, hidden: false,
+      shadow: { enabled: true, size: 8, x: 0, y: 2 },
       properties: props
     });
-    // 后端添加边（前端不渲染 vis-network 边，用 SVG）
+    // 添加 vis-network 边（虚线，无物理）
     for (var i = 0; i < selNormal.length; i++) {
-      await ca('add_edge', { from: selNormal[i], to: r.id, label: '\u663e\u793a', color: '#7C7E8C', properties: { _dispEdge: true } });
+      var er = await ca('add_edge', { from: selNormal[i], to: r.id, label: '', color: '#7C7E8C', properties: { _dispEdge: true } });
+      state.edges.add({
+        id: er.id, from: er.from, to: er.to, label: '',
+        color: { color: 'rgba(124,126,140,0.3)', highlight: '#7C7E8C' },
+        width: 1.5, dashes: [5,4], physics: false,
+        properties: { _dispEdge: true }
+      });
     }
+    // 更新 label
+    state.nodes.update({ id: r.id, label: buildDisplayLabel(r.id, '\u663e\u793a\u533a') });
     eh(false); st(); sm('\u2705 \u663e\u793a\u8282\u70b9\u5df2\u521b\u5efa');
-    state.kcNodeId = r.id;
-    openDpPanel(r.id);
+    state.network.selectNodes([r.id]);
+    if (r.id) showDisplayPanel(r.id);
   } catch(e) { sm('\u274c \u5931\u8d25: ' + e.message); }
 }
-
-// ----- 打开浮层 -----
-function openDpPanel(nodeId) {
-  if (!state.nodes) return;
-  var nd = state.nodes.get(nodeId);
-  if (!nd || !isDisplayNode(nd)) return;
-  var props = nd.properties || {};
-  state.kcNodeId = nodeId;
-
-  // 填充标题
-  document.getElementById('dp-title').textContent = props._label || '\u663e\u793a\u533a';
-
-  // 关联节点列表
-  var related = getRelatedNodes(nodeId);
-  var list = document.getElementById('dp-related-list');
-  list.innerHTML = '';
-  if (related.length === 0) {
-    list.innerHTML = '<span class=\"kc-related-chip-empty\">\u6682\u65e0\u5173\u8054</span>';
-  } else {
-    for (var i = 0; i < related.length; i++) {
-      var r = related[i];
-      if (isDisplayNode(r)) continue;
-      var rc = typeof r.color === 'object' ? r.color.background : (r.color || '#00E8C6');
-      var chip = document.createElement('span');
-      chip.className = 'kc-related-chip';
-      chip.innerHTML = '<span class=\"kc-related-chip-dot\" style=\"background:' + rc + '\"></span>' + (r.label || '\u672a\u547d\u540d');
-      (function(id) { chip.addEventListener('click', function(e) { e.stopPropagation(); showNodePanel(id); }); })(r.id);
-      list.appendChild(chip);
-    }
-  }
-
-  // 内容：列出关联节点名称 + 内容预览
-  var contentEl = document.getElementById('dp-content');
-  var html = '';
-  if (related.length) {
-    for (var i = 0; i < related.length; i++) {
-      var r = related[i];
-      if (isDisplayNode(r)) continue;
-      var rc = typeof r.color === 'object' ? r.color.background : (r.color || '#00E8C6');
-      html += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;">';
-      html += '<span style="width:7px;height:7px;border-radius:50%;background:' + rc + ';flex-shrink:0;"></span>';
-      html += '<span style="font-weight:400;">' + (r.label || '?') + '</span></div>';
-      if (r.content) {
-        var preview = r.content.replace(/<[^>]+>/g, '').substring(0, 80);
-        if (preview) html += '<div style="font-size:11px;opacity:0.5;padding:0 0 4px 13px;">' + preview + '...</div>';
-      }
-    }
-  } else {
-    html = '<p style="opacity:0.35;font-style:italic;">\u6682\u65e0\u5173\u8054\u8282\u70b9</p>';
-  }
-  contentEl.innerHTML = html;
-
-  // 显示浮层
-  var panel = document.getElementById('display-panel');
-  panel.classList.remove('hidden');
-  syncDpPos();
-  setTimeout(syncDpPos, 200);
-  createDpLines(nodeId);
-  sm('\u2705 \u663e\u793a\u8282\u70b9\u5df2\u6253\u5f00');
-}
-
-function closeDpPanel() {
-  document.getElementById('display-panel').classList.add('hidden');
-  removeDpLines();
-  state.kcNodeId = null;
-}
-
-// 浮层关闭按钮
-document.getElementById('dp-close').addEventListener('click', closeDpPanel);
-
-// ----- 浮层拖拽（同步移动 vis-network 锚点）-----
-var dpDragData = null;
-
-document.getElementById('dp-header').addEventListener('mousedown', function(e) {
-  if (e.target.closest('.kc-close-btn')) return;
-  var panel = document.getElementById('display-panel');
-  dpDragData = {
-    offsetX: e.clientX - panel.offsetLeft,
-    offsetY: e.clientY - panel.offsetTop
-  };
-});
-
-document.addEventListener('mousemove', function(e) {
-  if (!dpDragData) return;
-  var panel = document.getElementById('display-panel');
-  var ct = document.getElementById('graph-container');
-  var crect = ct.getBoundingClientRect();
-  var nx = Math.max(0, e.clientX - dpDragData.offsetX);
-  var ny = Math.max(0, e.clientY - dpDragData.offsetY);
-  panel.style.left = nx + 'px';
-  panel.style.top = ny + 'px';
-  // 同步 vis-network 锚点位置
-  if (state.kcNodeId && state.network) {
-    try {
-      var dom = state.network.DOMtoCanvas({ x: nx + panel.offsetWidth / 2, y: ny + panel.offsetHeight / 2 });
-      state.network.moveNode(state.kcNodeId, dom.x, dom.y);
-    } catch(e) {}
-  }
-  updateDpLines();
-});
-
-document.addEventListener('mouseup', function() { dpDragData = null; });
-document.addEventListener('mouseleave', function() { dpDragData = null; });
-
-// ----- 浮层调整大小 -----
-var dpResizeData = null;
-
-document.getElementById('dp-resize-handle').addEventListener('mousedown', function(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  var panel = document.getElementById('display-panel');
-  dpResizeData = {
-    startX: e.clientX, startY: e.clientY,
-    startW: panel.offsetWidth, startH: panel.offsetHeight
-  };
-});
-
-document.addEventListener('mousemove', function(e) {
-  if (!dpResizeData) return;
-  var panel = document.getElementById('display-panel');
-  var nw = Math.max(220, dpResizeData.startW + (e.clientX - dpResizeData.startX));
-  var nh = Math.max(120, dpResizeData.startH + (e.clientY - dpResizeData.startY));
-  panel.style.width = nw + 'px';
-  panel.style.height = nh + 'px';
-});
-
-document.addEventListener('mouseup', function() { dpResizeData = null; });
 
 // ===== Level Up/Down =====
 document.getElementById('level-down').addEventListener('click', function() {
@@ -839,7 +709,7 @@ document.addEventListener('keydown', function(e) {
     if(e.key==='l'||e.key==='L') { e.preventDefault(); tidyLayout(); return; }
     if(e.key==='k'||e.key==='K') { e.preventDefault(); if(state.selectedId) showKnowledgeCard(state.selectedId); return; }
     if(e.key==='Delete'||e.key==='Backspace') { e.preventDefault(); deleteSelected(); return; }
-    if(e.key==='Escape') { e.preventDefault(); if(state.addingEdge.active) cancelAddEdge(); else { if(!document.getElementById('node-tab-overlay').classList.contains('hidden')) closeTab(); if(!document.getElementById('knowledge-card').classList.contains('hidden')) closeKnowledgeCard(); if(!document.getElementById('display-panel').classList.contains('hidden')) closeDpPanel(); clrSel(); } return; }
+    if(e.key==='Escape') { e.preventDefault(); if(state.addingEdge.active) cancelAddEdge(); else { if(!document.getElementById('node-tab-overlay').classList.contains('hidden')) closeTab(); if(!document.getElementById('knowledge-card').classList.contains('hidden')) closeKnowledgeCard(); clrSel(); } return; }
     if(e.key==='?') { e.preventDefault(); document.getElementById('shortcuts-overlay').classList.toggle('hidden'); return; }
     if(e.key==='1') { e.preventDefault(); applyLayout('force'); document.getElementById('layout-select').value='force'; return; }
     if(e.key==='2') { e.preventDefault(); applyLayout('hierarchical'); document.getElementById('layout-select').value='hierarchical'; return; }
