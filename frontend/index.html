@@ -23,6 +23,7 @@
       <span class="toolbar-sep"></span>
       <button class="tool-btn" id="btn-add-node" title="添加节点 (A)">➕ 节点</button>
       <button class="tool-btn" id="btn-add-edge" title="添加边 (E)">➡️ 边</button>
+      <button class="tool-btn" id="btn-add-display" title="添加显示节点">📺 显示</button>
       <button class="tool-btn" id="btn-delete-selected" title="删除选中 (Delete)">🗑️ 删除</button>
       <span class="toolbar-sep"></span>
       <button class="tool-btn" id="btn-tidy-layout" title="整理布局">✨ 整理</button>
@@ -51,6 +52,7 @@
         <div class="empty-text">图谱为空</div>
         <div class="empty-sub">「示例」加载数据 · 点击「节点」创建 · 按 ⌘ 查看快捷键</div>
       </div>
+      <div id="disp-resize-handle"></div>
     </div>
 
     <!-- ===== 右侧属性面板 ===== -->
@@ -72,6 +74,7 @@
         <h3 class="panel-title">
           <span class="panel-icon">🔵</span> 节点属性
           <button class="panel-btn-open" id="btn-open-node-tab" title="打开节点标签页">📝</button>
+          <button class="panel-btn-open" id="btn-card-quick" title="打开知识卡片">📖</button>
           <span class="panel-id" id="node-panel-id"></span>
         </h3>
         <div class="panel-body">
@@ -110,6 +113,7 @@
           <div class="form-actions">
             <button class="btn-primary" id="btn-save-node">💾 保存</button>
             <button class="btn-secondary" id="btn-open-node-tab2">📝 标签页</button>
+            <button class="btn-secondary" id="btn-show-card">📖 知识卡片</button>
           </div>
         </div>
       </div>
@@ -171,6 +175,47 @@
           </div>
         </div>
       </div>
+
+      <!-- 显示节点属性编辑 -->
+      <div id="panel-display" class="panel-section hidden">
+        <h3 class="panel-title">
+          <span class="panel-icon">📺</span> 显示节点
+          <span class="panel-id" id="display-panel-id"></span>
+        </h3>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>标签</label>
+            <input type="text" id="edit-display-label" class="form-input" placeholder="显示区名称" />
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>宽度</label>
+              <div class="level-selector">
+                <button class="level-btn" id="disp-w-down">−</button>
+                <span id="edit-display-width" class="level-value">280</span>
+                <button class="level-btn" id="disp-w-up">+</button>
+              </div>
+            </div>
+            <div class="form-group flex-1">
+              <label>高度</label>
+              <div class="level-selector">
+                <button class="level-btn" id="disp-h-down">−</button>
+                <span id="edit-display-height" class="level-value">180</span>
+                <button class="level-btn" id="disp-h-up">+</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>关联知识节点</label>
+            <div id="display-connected-list" class="display-connected-list">
+              <span class="kc-related-chip-empty">暂无关联节点</span>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" id="btn-save-display">💾 保存</button>
+          </div>
+        </div>
+      </div>
     </aside>
   </div>
 
@@ -195,6 +240,8 @@
             <h4>编辑</h4>
             <div class="shortcut-row"><kbd>A</kbd><span>添加节点</span></div>
             <div class="shortcut-row"><kbd>E</kbd><span>添加边模式</span></div>
+            <div class="shortcut-row"><kbd>D</kbd><span>添加显示节点</span></div>
+            <div class="shortcut-row"><kbd>K</kbd><span>打开知识卡片</span></div>
             <div class="shortcut-row"><kbd>Delete</kbd><span>删除选中</span></div>
             <div class="shortcut-row"><kbd>F2</kbd><span>编辑节点标签</span></div>
             <div class="shortcut-row"><kbd>Space</kbd><span>连接选中两个节点</span></div>
@@ -272,6 +319,28 @@
         <span>点击「保存」或按 Ctrl+S 保存</span>
       </div>
     </div>
+  </div>
+
+  <!-- ===== 知识卡片浮动窗口 ===== -->
+  <div id="knowledge-card" class="kc-card hidden">
+    <div class="kc-header" id="kc-header">
+      <div class="kc-title-row">
+        <span class="kc-dot" id="kc-dot">●</span>
+        <span class="kc-title" id="kc-title">节点名称</span>
+        <span class="kc-level-badge" id="kc-level-badge">Lv.1</span>
+        <span class="kc-id" id="kc-id"></span>
+        <span class="kc-spacer"></span>
+        <button class="kc-close-btn" id="kc-close" title="关闭">✕</button>
+      </div>
+      <div class="kc-related-section" id="kc-related-section">
+        <span class="kc-related-label">关联节点</span>
+        <div class="kc-related-list" id="kc-related-list"></div>
+      </div>
+    </div>
+    <div class="kc-body" id="kc-body">
+      <div class="kc-content-wrap" id="kc-content-wrap">内容加载中...</div>
+    </div>
+    <div class="kc-resize-handle" id="kc-resize-handle"></div>
   </div>
 
   <!-- ===== 底部状态栏 ===== -->
