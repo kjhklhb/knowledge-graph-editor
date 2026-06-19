@@ -43,7 +43,7 @@ def handle_add_node(params):
     """添加节点"""
     return graph.add_node(
         label=params.get("label", "新节点"),
-        color=params.get("color", "#4A90D9"),
+        color=params.get("color", "#00E8C6"),
         properties=params.get("properties", {}),
     )
 
@@ -90,7 +90,7 @@ def handle_add_edge(params):
         from_id=from_id,
         to_id=to_id,
         label=params.get("label", "关联"),
-        color=params.get("color", "#95A5A6"),
+        color=params.get("color", "#6B7280"),
         properties=params.get("properties", {}),
     )
 

@@ -28,13 +28,13 @@
 })();
 
 const state={network:null,nodes:null,edges:null,selectedType:null,selectedId:null,selFirst:null,selSecond:null,addingEdge:{active:false,fromId:null,fromLabel:null},currentFilePath:null,currentLayout:"force",tabNodeId:null};
-const NC=["#E74C3C","#3498DB","#2ECC71","#9B59B6","#F39C12","#1ABC9C","#E67E22","#1E8449","#C0392B","#2980B9","#8E44AD","#D35400"];
+const NC=["#00E8C6","#EE5D43","#8FD46D","#FFCA28","#F07E9E","#A37FFF","#5BA3EC","#03D6B8","#FF9A5C","#6EDB9E","#E86680","#2AD4B6"];
 const LP={force:{physics:{enabled:true,solver:"forceAtlas2Based",forceAtlas2Based:{gravitationalConstant:-2,centralGravity:.001,springLength:130,springConstant:.02,damping:.5},stabilization:{iterations:100,updateInterval:25},timestep:.5,adaptiveTimestep:true},layout:{improvedLayout:true},label:"力导向"},hierarchical:{physics:{enabled:false},layout:{hierarchical:{enabled:true,direction:"UD",sortMethod:"directed",levelSeparation:200,nodeSpacing:180,treeSpacing:250,blockShifting:true,edgeMinimization:true,parentCentralization:true}},label:"层次"},radial:{physics:{enabled:false},layout:{hierarchical:{enabled:true,direction:"UD",sortMethod:"hubsize",levelSeparation:180,nodeSpacing:200,treeSpacing:300,blockShifting:true,edgeMinimization:true,parentCentralization:false}},label:"辐射"}};
 function ns(l){return Math.max(12,30-(Math.max(1,Math.min(10,l||1))-1)*3);}
 function dh(h,f){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return"rgb("+Math.max(0,~~(r*(1-f)))+","+Math.max(0,~~(g*(1-f)))+","+Math.max(0,~~(b*(1-f)))+")";}
 function lh(h,f){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return"rgb("+Math.min(255,~~(r+(255-r)*f))+","+Math.min(255,~~(g+(255-g)*f))+","+Math.min(255,~~(b+(255-b)*f))+")";}
 function Cc(c){return{background:c,border:dh(c,.25),highlight:{background:lh(c,.25),border:"#1a1a2e"}};}
-function Ce(c){return{color:c,highlight:"#4da6ff"};}
+function Ce(c){return{color:c,highlight:"#00e8c6"};}
 async function ca(a,p){const r=await window.api.call(a,p);if(!r.success)throw Error(r.error||"失败");return r.data;}
 function sm(m){ console.log("[STATUS] "+m);document.getElementById("status-bar").textContent=m;}
 function st(){document.getElementById("footer-stats").textContent="节点: "+state.nodes.length+" | 边: "+state.edges.length;}
@@ -131,12 +131,12 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
   if(!state.nodes) { sm("未初始化"); return; }
   var na = (d.nodes||[]).map(function(n) {
     return { id: n.id, label: n.label||'', level: n.level||1, content: n.content||'',
-      color: Cc(n.color||'#4A90D9'), size: ns(n.level||1),
+      color: Cc(n.color||'#00E8C6'), size: ns(n.level||1),
       title: tp(n), properties: n.properties||{}, shadow: {enabled:true} };
   });
   var ea = (d.edges||[]).map(function(e) {
     return { id: e.id, from: e.from, to: e.to, label: e.label||'',
-      color: Ce(e.color||'#95A5A6'), width: 2, title: tp(e), properties: e.properties||{} };
+      color: Ce(e.color||'#6B7280'), width: 2, title: tp(e), properties: e.properties||{} };
   });
   state.nodes.clear(); state.edges.clear();
   state.nodes.add(na); state.edges.add(ea);
@@ -157,7 +157,7 @@ function showNodePanel(id) { console.log("[PANEL] showNodePanel("+id+")");
   state.selectedType = 'node'; state.selectedId = id;
   hAP();
   document.getElementById('panel-node').classList.remove('hidden');
-  var bg = typeof nd.color==='object' ? nd.color.background : (nd.color||'#4A90D9');
+  var bg = typeof nd.color==='object' ? nd.color.background : (nd.color||'#00E8C6');
   document.getElementById('edit-node-label').value = nd.label||'';
   document.getElementById('edit-node-color').value = bg;
   document.getElementById('node-color-hex').textContent = bg;
@@ -189,7 +189,7 @@ function showEdgePanel(id) { console.log("[PANEL] showEdgePanel("+id+")");
   state.selectedType = 'edge'; state.selectedId = id;
   hAP();
   document.getElementById('panel-edge').classList.remove('hidden');
-  var ec = typeof ed.color==='object' ? ed.color.color : (ed.color||'#95A5A6');
+  var ec = typeof ed.color==='object' ? ed.color.color : (ed.color||'#6B7280');
   document.getElementById('edit-edge-label').value = ed.label||'';
   document.getElementById('edit-edge-color').value = ec;
   document.getElementById('edge-color-hex').textContent = ec;
@@ -307,7 +307,7 @@ function openTab(id) { console.log("[TAB] openTab("+id+")");
   if(!state.nodes) return;
   var nd = state.nodes.get(id); if(!nd) return;
   state.tabNodeId = id;
-  document.getElementById('tab-dot-color').style.color = typeof nd.color==='object' ? nd.color.background : (nd.color||'#4DA6FF');
+  document.getElementById('tab-dot-color').style.color = typeof nd.color==='object' ? nd.color.background : (nd.color||'#00E8C6');
   document.getElementById('tab-node-title').value = nd.label||'';
   document.getElementById('tab-level-badge').textContent = 'Lv.' + (nd.level||1);
   document.getElementById('tab-node-id').textContent = '#' + id;
@@ -398,8 +398,8 @@ document.addEventListener('keydown', function(e) {
     var sel = state.network.getSelectedNodes();
     if(sel.length>=2 && sel[0]!==sel[1]) {
       var fromId = sel[0], toId = sel[1];
-      ca('add_edge', { from: fromId, to: toId, label: '\u5173\u8054', color: '#95A5A6' }).then(function(r) {
-        state.edges.add({ id: r.id, from: r.from, to: r.to, label: '\u5173\u8054', width: 2, color: Ce('#95A5A6'), title: tp({label:'\u5173\u8054'}), properties: {} });
+      ca('add_edge', { from: fromId, to: toId, label: '\u5173\u8054', color: '#6B7280' }).then(function(r) {
+        state.edges.add({ id: r.id, from: r.from, to: r.to, label: '\u5173\u8054', width: 2, color: Ce('#6B7280'), title: tp({label:'\u5173\u8054'}), properties: {} });
         st(); sm('\u2705 \u5df2\u8fde\u63a5');
       }).catch(function(e) { sm('\u274c '+e.message); });
     } else sm('\u8bf7\u9009\u4e2d\u4e24\u4e2a\u8282\u70b9');
@@ -462,14 +462,14 @@ var themeBtn = document.getElementById('btn-theme');
 function updateVisTheme(day) {
   if(!state.network) return;
   var stroke = day ? '#e8ebf2' : '#080a10';
-  var hlEdge = day ? '#3b8ee5' : '#4da6ff';
+  var hlEdge = day ? '#00bfa5' : '#00e8c6';
   state.network.setOptions({
     nodes: { font: { strokeColor: stroke } },
     edges: { font: { strokeColor: stroke } },
   });
   // 更新所有已存在的边的高亮色
   state.edges.forEach(function(e) {
-    var raw = e.color && e.color.color ? e.color.color : '#95A5A6';
+    var raw = e.color && e.color.color ? e.color.color : '#6B7280';
     state.edges.update({ id: e.id, color: { color: raw, highlight: hlEdge } });
   });
 }

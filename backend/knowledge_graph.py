@@ -24,7 +24,7 @@ class KnowledgeGraph:
 
     # ---- 节点操作 ----
 
-    def add_node(self, label="新节点", color="#4A90D9", properties=None, level=1, content=""):
+    def add_node(self, label="新节点", color="#00E8C6", properties=None, level=1, content=""):
         """添加一个节点，返回节点字典"""
         node_id = str(uuid.uuid4())[:8]
         node = {
@@ -82,7 +82,7 @@ class KnowledgeGraph:
 
     # ---- 边操作 ----
 
-    def add_edge(self, from_id, to_id, label="关联", color="#95A5A6", properties=None):
+    def add_edge(self, from_id, to_id, label="关联", color="#6B7280", properties=None):
         """添加一条边"""
         if from_id not in self.nodes:
             raise ValueError(f"起始节点 {from_id} 不存在")
@@ -212,7 +212,7 @@ class KnowledgeGraph:
             self.nodes[nid] = {
                 "id": nid,
                 "label": node_data.get("label", ""),
-                "color": node_data.get("color", {}).get("background") if isinstance(node_data.get("color"), dict) else node_data.get("color", "#4A90D9"),
+                "color": node_data.get("color", {}).get("background") if isinstance(node_data.get("color"), dict) else node_data.get("color", "#00E8C6"),
                 "properties": node_data.get("properties", {}),
                 "level": int(node_data.get("level", 1)),
                 "content": node_data.get("content", ""),
@@ -225,7 +225,7 @@ class KnowledgeGraph:
                 "from": str(edge_data.get("from")),
                 "to": str(edge_data.get("to")),
                 "label": edge_data.get("label", ""),
-                "color": edge_data.get("color", {}).get("color") if isinstance(edge_data.get("color"), dict) else edge_data.get("color", "#95A5A6"),
+                "color": edge_data.get("color", {}).get("color") if isinstance(edge_data.get("color"), dict) else edge_data.get("color", "#6B7280"),
                 "properties": edge_data.get("properties", {}),
             }
 
@@ -246,25 +246,25 @@ class KnowledgeGraph:
     def load_sample(self):
         """加载示例知识图谱"""
         self.clear()
-        n1 = self.add_node("人工智能", "#E74C3C", {"领域": "计算机科学", "描述": "研究智能机器"}, level=1)
-        n2 = self.add_node("机器学习", "#3498DB", {"领域": "人工智能", "类型": "监督学习"}, level=2)
-        n3 = self.add_node("深度学习", "#2ECC71", {"领域": "机器学习", "框架": "PyTorch/TensorFlow"}, level=3)
-        n4 = self.add_node("自然语言处理", "#9B59B6", {"领域": "人工智能", "应用": "文本分析"}, level=2)
-        n5 = self.add_node("计算机视觉", "#F39C12", {"领域": "人工智能", "应用": "图像识别"}, level=2)
-        n6 = self.add_node("Transformer", "#1ABC9C", {"年份": "2017", "论文": "Attention Is All You Need"}, level=3)
-        n7 = self.add_node("GPT", "#E67E22", {"类型": "大语言模型", "公司": "OpenAI"}, level=4)
-        n8 = self.add_node("知识图谱", "#E74C3C", {"定义": "结构化知识表示"}, level=1)
+        n1 = self.add_node("人工智能", "#00E8C6", {"领域": "计算机科学", "描述": "研究智能机器"}, level=1)
+        n2 = self.add_node("机器学习", "#5BA3EC", {"领域": "人工智能", "类型": "监督学习"}, level=2)
+        n3 = self.add_node("深度学习", "#8FD46D", {"领域": "机器学习", "框架": "PyTorch/TensorFlow"}, level=3)
+        n4 = self.add_node("自然语言处理", "#A37FFF", {"领域": "人工智能", "应用": "文本分析"}, level=2)
+        n5 = self.add_node("计算机视觉", "#FFCA28", {"领域": "人工智能", "应用": "图像识别"}, level=2)
+        n6 = self.add_node("Transformer", "#03D6B8", {"年份": "2017", "论文": "Attention Is All You Need"}, level=3)
+        n7 = self.add_node("GPT", "#EE5D43", {"类型": "大语言模型", "公司": "OpenAI"}, level=4)
+        n8 = self.add_node("知识图谱", "#FF9A5C", {"定义": "结构化知识表示"}, level=1)
 
-        self.add_edge(n1["id"], n2["id"], "包含", "#95A5A6")
-        self.add_edge(n1["id"], n4["id"], "包含", "#95A5A6")
-        self.add_edge(n1["id"], n5["id"], "包含", "#95A5A6")
-        self.add_edge(n1["id"], n8["id"], "包含", "#95A5A6")
-        self.add_edge(n2["id"], n3["id"], "包含", "#95A5A6")
-        self.add_edge(n3["id"], n6["id"], "基础", "#95A5A6")
-        self.add_edge(n6["id"], n7["id"], "核心技术", "#95A5A6")
-        self.add_edge(n4["id"], n6["id"], "应用", "#95A5A6")
-        self.add_edge(n5["id"], n3["id"], "应用", "#95A5A6")
-        self.add_edge(n7["id"], n7["id"], "自环演示", "#95A5A6")
+        self.add_edge(n1["id"], n2["id"], "包含", "#6B7280")
+        self.add_edge(n1["id"], n4["id"], "包含", "#6B7280")
+        self.add_edge(n1["id"], n5["id"], "包含", "#6B7280")
+        self.add_edge(n1["id"], n8["id"], "包含", "#6B7280")
+        self.add_edge(n2["id"], n3["id"], "包含", "#6B7280")
+        self.add_edge(n3["id"], n6["id"], "基础", "#6B7280")
+        self.add_edge(n6["id"], n7["id"], "核心技术", "#6B7280")
+        self.add_edge(n4["id"], n6["id"], "应用", "#6B7280")
+        self.add_edge(n5["id"], n3["id"], "应用", "#6B7280")
+        self.add_edge(n7["id"], n7["id"], "自环演示", "#6B7280")
 
         self._dirty = True
         return self.get_graph()
