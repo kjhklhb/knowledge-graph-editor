@@ -63,12 +63,17 @@ function initNet() { console.log("[INIT] initNet() start");
   ct.addEventListener('click', function(e) { if((e.target===ct||e.target.id==='graph-vis')&&!state.addingEdge.active) clrSel(); });
   state.network.once('stabilizationIterationsDone', function() { sm('\u5c31\u7eea'); });
   state.network.on('viewChanged', function() { updateDispHandle(); });
-  // 拖拽结束自动置顶（remove + re-add 改变绘制顺序）
+  // 拖拽结束自动置顶（save+restore 位置避免回弹）
   state.network.on('dragEnd', function(params) {
     if (params.nodes && params.nodes.length) {
       for (var i = 0; i < params.nodes.length; i++) {
-        var nd = state.nodes.get(params.nodes[i]);
-        if (nd) { state.nodes.remove(params.nodes[i]); state.nodes.add(nd); }
+        var id = params.nodes[i];
+        var pos = state.network.getPosition(id);
+        var nd = state.nodes.get(id);
+        if (nd) { state.nodes.remove(id); state.nodes.add(nd); }
+        if (pos) {
+          try { state.network.moveNode(id, pos.x, pos.y); } catch(e) {}
+        }
       }
     }
   });
@@ -152,7 +157,7 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
       var dh = Math.max(120, parseInt(props._dispH) || 180);
       return {
         id: n.id, label: '', // label will be set after edges loaded
-        color: { background: 'var(--bg-surface)', border: 'var(--accent)', highlight: { background: 'var(--bg-surface)', border: 'var(--accent)' } },
+        color: { background: 'var(--bg-surface)', border: '#7C7E8C', highlight: { background: 'var(--bg-surface)', border: '#9EA0B0' } },
         shape: 'box', borderRadius: 12,
         widthConstraint: dw,
         margin: { top: Math.max(30, (dh - 30) / 2), right: 14, bottom: Math.max(30, (dh - 30) / 2), left: 14 },
@@ -574,19 +579,20 @@ function isDisplayNode(nd) {
 
 function buildDisplayLabel(nodeId, label) {
   var related = getRelatedNodes(nodeId);
-  var html = '<div style="font-weight:500;font-size:13px;padding-bottom:5px;text-align:center;">\u{1F4FA} ' + (label || '\u663e\u793a\u533a') + '</div>';
-  html += '<div style="border-top:1px solid rgba(255,255,255,0.08);margin:2px 0 5px 0;"></div>';
+  var html = '<div style="font-weight:500;font-size:13px;padding:6px 8px 4px 8px;text-align:center;letter-spacing:0.5px;color:var(--text-primary);">';
+  html += '\u{1F4FA} ' + (label || '\u663e\u793a\u533a') + '</div>';
+  html += '<div style="border-top:1px solid rgba(255,255,255,0.06);margin:0 8px 4px 8px;"></div>';
   if (related.length) {
     for (var i = 0; i < related.length; i++) {
       var r = related[i];
       if (isDisplayNode(r)) continue;
       var rc = typeof r.color === 'object' ? r.color.background : (r.color || '#00E8C6');
-      html += '<div style="font-size:11px;padding:2px 4px;opacity:0.75;white-space:nowrap;">';
-      html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + rc + ';margin-right:5px;"></span>';
-      html += (r.label || '?') + '</div>';
+      html += '<div style="font-size:11px;padding:2px 10px;opacity:0.8;white-space:nowrap;display:flex;align-items:center;gap:5px;">';
+      html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + rc + ';flex-shrink:0;"></span>';
+      html += '<span style="overflow:hidden;text-overflow:ellipsis;">' + (r.label || '?') + '</span></div>';
     }
   } else {
-    html += '<div style="font-size:10px;opacity:0.35;text-align:center;padding-top:4px;">\u6682\u65e0\u5173\u8054</div>';
+    html += '<div style="font-size:10px;opacity:0.35;text-align:center;padding:6px 0;">\u6682\u65e0\u5173\u8054</div>';
   }
   return html;
 }
@@ -654,7 +660,7 @@ async function addDisplayNode() {
     // 在 vis-network 中创建（label 稍后更新）
     state.nodes.add({
       id: r.id, label: '',
-      color: { background: 'var(--bg-surface)', border: 'var(--accent)', highlight: { background: 'var(--bg-surface)', border: 'var(--accent)' } },
+      color: { background: 'var(--bg-surface)', border: '#7C7E8C', highlight: { background: 'var(--bg-surface)', border: '#9EA0B0' } },
       shape: 'box', borderRadius: 12,
       widthConstraint: 280,
       margin: { top: 75, right: 14, bottom: 75, left: 14 },
@@ -779,11 +785,7 @@ document.addEventListener('mousemove', function(e) {
   var nw = Math.max(200, Math.min(800, dispResizeData.startW + dw));
   var nh = Math.max(120, Math.min(600, dispResizeData.startH + dh));
   // 实时更新画布上的节点
-  state.nodes.update({
-    id: dispResizeData.nodeId,
-    widthConstraint: nw,
-    margin: { top: Math.max(30, (nh - 30) / 2), right: 14, bottom: Math.max(30, (nh - 30) / 2), left: 14 }
-  });
+  state.nodes.update({ id: dispResizeData.nodeId, widthConstraint: nw });
   // 同步面板数值
   document.getElementById('edit-display-width').textContent = nw;
   document.getElementById('edit-display-height').textContent = nh;
@@ -797,7 +799,7 @@ document.addEventListener('mouseup', function() {
     var nh = parseInt(document.getElementById('edit-display-height').textContent) || 180;
     var props = { _type: 'display', _dispW: nw, _dispH: nh };
     ca('update_node', { node_id: dispResizeData.nodeId, properties: props }).catch(function() {});
-    state.nodes.update(dispResizeData.nodeId, { properties: props });
+    state.nodes.update({ id: dispResizeData.nodeId, properties: props });
   }
   dispResizeData = null;
 });
