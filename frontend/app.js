@@ -42,6 +42,7 @@ function eh(s){document.getElementById("empty-hint").classList.toggle("hidden",!
 function tp(n){const p=n.properties||{};let t="<b>"+(n.label||"")+"</b>";if(Object.keys(p).length){t+="<hr>";for(const[k,v]of Object.entries(p))t+="<div>"+k+": "+v+"</div>";}return t;}
 function hAP(){["panel-empty","panel-node","panel-edge","panel-add-edge","panel-display"].forEach(function(id){document.getElementById(id).classList.add("hidden");});}
 function uLD(lv){for(var i=1;i<=5;i++){var d=document.getElementById("ld-"+i);if(d)d.classList.toggle("active",i<=lv);}}
+function cv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 
 // ===== initNetwork =====
 function initNet() { console.log("[INIT] initNet() start");
@@ -157,11 +158,11 @@ function ld(d) { console.log("[DATA] ld() nodes="+(d?d.nodes?d.nodes.length:0:0)
       var dh = Math.max(120, parseInt(props._dispH) || 180);
       return {
         id: n.id, label: '', // label will be set after edges loaded
-        color: { background: 'var(--bg-surface)', border: '#7C7E8C', highlight: { background: 'var(--bg-surface)', border: '#9EA0B0' } },
+        color: { background: cv('--bg-surface'), border: '#7C7E8C', highlight: { background: cv('--bg-surface'), border: '#9EA0B0' } },
         shape: 'box', borderRadius: 12,
         widthConstraint: dw,
         margin: { top: Math.max(30, (dh - 30) / 2), right: 14, bottom: Math.max(30, (dh - 30) / 2), left: 14 },
-        font: { size: 12, color: 'var(--text-secondary)', face: 'Segoe UI, PingFang SC, sans-serif', multi: 'html' },
+        font: { size: 12, color: cv('--text-secondary'), face: 'Segoe UI, PingFang SC, sans-serif', multi: 'html' },
         borderWidth: 2, borderWidthSelected: 3,
         physics: false, hidden: false,
         shadow: { enabled: true, size: 8, x: 0, y: 2 },
@@ -660,11 +661,11 @@ async function addDisplayNode() {
     // 在 vis-network 中创建（label 稍后更新）
     state.nodes.add({
       id: r.id, label: '',
-      color: { background: 'var(--bg-surface)', border: '#7C7E8C', highlight: { background: 'var(--bg-surface)', border: '#9EA0B0' } },
+      color: { background: cv('--bg-surface'), border: '#7C7E8C', highlight: { background: cv('--bg-surface'), border: '#9EA0B0' } },
       shape: 'box', borderRadius: 12,
       widthConstraint: 280,
       margin: { top: 75, right: 14, bottom: 75, left: 14 },
-      font: { size: 12, color: 'var(--text-secondary)', face: 'Segoe UI, PingFang SC, sans-serif', multi: 'html' },
+      font: { size: 12, color: cv('--text-secondary'), face: 'Segoe UI, PingFang SC, sans-serif', multi: 'html' },
       borderWidth: 2, borderWidthSelected: 3,
       physics: false,
       shadow: { enabled: true, size: 8, x: 0, y: 2 },
@@ -731,10 +732,10 @@ function showDisplayPanel(id) {
     }
   }
 
-  // 显示调整手柄
+  // 显示调整手柄（延迟等待 vis-network 渲染完成）
   var handle = document.getElementById('disp-resize-handle');
   handle.style.display = 'block';
-  setTimeout(updateDispHandle, 50);
+  setTimeout(function() { updateDispHandle(); setTimeout(updateDispHandle, 300); }, 100);
 }
 
 // 保存显示节点
@@ -756,6 +757,7 @@ async function saveDisplayNode() {
       margin: { top: Math.max(30, (dh - 30) / 2), right: 14, bottom: Math.max(30, (dh - 30) / 2), left: 14 }
     });
     updateDispHandle();
+    setTimeout(updateDispHandle, 200);
     sm('\u2705 \u663e\u793a\u8282\u70b9\u5df2\u4fdd\u5b58');
   } catch(e) { sm('\u274c \u5931\u8d25: ' + e.message); }
 }
