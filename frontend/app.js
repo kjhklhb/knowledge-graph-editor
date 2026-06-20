@@ -117,7 +117,7 @@ function applyLayout(name) { console.log("[LAYOUT] applyLayout('"+name+"')");
   state.currentLayout = name;
   if(name==='force') {
     state.network.setOptions({ layout: { hierarchical: { enabled: false }, improvedLayout: true, randomSeed: Date.now() }, physics: p.physics });
-    state.network.setOptions({ physics: { enabled: true } }); state.network.startSimulation();
+    state.network.startSimulation();
   } else {
     // 切换到层级布局前剥离所有节点的 level，避免 vis 内部已缓存 level 导致冲突
     var ids = state.nodes.getIds();
@@ -133,7 +133,11 @@ function tidyLayout() { console.log("[LAYOUT] tidyLayout() current="+state.curre
   var p = LP[state.currentLayout]; if(!p) return;
   sm('\u4f18\u5316\u4e2d...');
   if(state.currentLayout==='force') {
-    state.network.setOptions({ layout: { hierarchical: { enabled: false }, improvedLayout: true, randomSeed: Date.now() }, physics: { enabled: true } });
+    // 完全重置物理引擎（包含完整 forceAtlas2Based 配置）
+    state.network.setOptions({
+      layout: { hierarchical: { enabled: false }, improvedLayout: true, randomSeed: Date.now() },
+      physics: p.physics
+    });
     state.network.startSimulation();
     state.network.once('stabilizationIterationsDone', function() { sm('\u2705 \u5e03\u5c40\u5df2\u4f18\u5316'); });
   } else {
