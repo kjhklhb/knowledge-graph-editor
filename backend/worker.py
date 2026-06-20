@@ -45,6 +45,8 @@ def handle_add_node(params):
         label=params.get("label", "新节点"),
         color=params.get("color", "#00E8C6"),
         properties=params.get("properties", {}),
+        level=params.get("level", 1),
+        content=params.get("content", ""),
     )
 
 @register("update_node")
@@ -58,6 +60,8 @@ def handle_update_node(params):
         label=params.get("label"),
         color=params.get("color"),
         properties=params.get("properties"),
+        level=params.get("level"),
+        content=params.get("content"),
     )
 
 @register("delete_node")
