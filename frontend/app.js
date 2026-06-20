@@ -341,7 +341,7 @@ async function newGraph() { console.log("[FILE] newGraph()");
   catch(e) { sm('\u5931\u8d25: ' + e.message); }
 }
 async function openFile() { console.log("[FILE] openFile()");
-  try { var d = await window.api.openDialog(); if(d.canceled||!d.filePaths||!d.filePaths.length) return; state.currentFilePath = d.filePaths[0]; await rf(); }
+  try { var d = await window.api.openDialog(); if(d.canceled||!d.filePaths||!d.filePaths.length) return; sm('\u52a0\u8f7d\u4e2d...'); state.currentFilePath = d.filePaths[0]; await ca('load_graph', { filepath: d.filePaths[0] }); await rf(); }
   catch(e) { sm('\u5931\u8d25: ' + e.message); }
 }
 async function saveFile() { console.log("[FILE] saveFile()");
